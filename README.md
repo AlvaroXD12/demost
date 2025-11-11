@@ -1,6 +1,7 @@
 # 🧠 Demo ST — Streamlit
 🤖 Predicción de Diabetes (Pima Dataset de `statsmodels.api.datasets.get_rdataset("Pima.tr", "MASS").data` ) para aprender Streamlit
 
+https://demost-1.streamlit.app/
 ---
 
 ## 💻 Cómo correr local
