@@ -21,8 +21,9 @@ main, .stApp {
     background: #f3f4f6;
 }
 
-/* Texto general negro (títulos, párrafos, labels, caption) */
-html, body, .stApp, .stMarkdown, p, li, span, label, h1, h2, h3, h4, h5, h6, .stCaption {
+/* Texto general negro */
+html, body, .stApp, .stMarkdown, p, li, span, label,
+h1, h2, h3, h4, h5, h6, .stCaption {
     color: #111827 !important;
 }
 
@@ -108,7 +109,7 @@ div[data-baseweb="select"] ul {
     background-color: #111827 !important;
 }
 div[data-baseweb="select"] li {
-    color: #f9fafb !important;
+    color: #f9fafb !important;   /* texto blanco en las opciones */
 }
 div[data-baseweb="select"] li:hover {
     background-color: #1f2937 !important;
@@ -136,7 +137,7 @@ REV_LABEL = {v: k for k, v in LABEL_MAP.items()}
 
 BEST_THR = 0.5
 
-# Variables usadas por el modelo
+# Variables usadas por el modelo (para el CSV)
 FEATURES = [
     "sex", "age", "studytime", "failures", "absences",
     "schoolsup", "famsup", "activities", "higher",
@@ -174,7 +175,8 @@ tab_ind, tab_batch = st.tabs(["🔹 Predicción individual", "📂 Predicción p
 #  Predicción individual
 # ==============================
 with tab_ind:
-    
+    st.markdown('<div class="card">', unsafe_allow_html=True)
+
     with st.form("form_atraso"):
         st.markdown(
             '<h4 style="margin-bottom:0.2rem;">Predicción individual</h4>',
@@ -185,9 +187,7 @@ with tab_ind:
         # 3 columnas, cada una con 6 controles
         col1, col2, col3 = st.columns(3)
 
-        # ============================
-        # Columna 1 (3 cajas + 3 sliders)
-        # ============================
+        # Columna 1
         with col1:
             sex_es = st.selectbox("Sexo", list(SEX_OPTS.keys()))
             schoolsup_es = st.selectbox(
@@ -212,9 +212,7 @@ with tab_ind:
                 help="1 = muy bajo, 5 = muy alto",
             )
 
-        # ============================
-        # Columna 2 (3 cajas + 3 sliders)
-        # ============================
+        # Columna 2
         with col2:
             famsup_es = st.selectbox(
                 "Apoyo educativo de la familia",
@@ -245,9 +243,7 @@ with tab_ind:
                 help="1 = casi nunca, 5 = muy frecuente",
             )
 
-        # ============================
-        # Columna 3 (2 cajas + 4 sliders)
-        # ============================
+        # Columna 3
         with col3:
             higher_es = st.selectbox(
                 "Desea estudios superiores",
@@ -316,13 +312,26 @@ with tab_ind:
 
         # Probabilidad de ATRASO (clase 1)
         proba_atraso = float(winner_pipe.predict_proba(df)[0, 1])
+
+        # Regla con umbral: alta prob → ATRASO (1)
         pred_int = int(proba_atraso >= BEST_THR)
         pred_label = REV_LABEL[pred_int]
+
+        if proba_atraso >= BEST_THR:
+            explicacion = (
+                f"Como {proba_atraso:.3f} ≥ {BEST_THR:.2f}, "
+                f"el modelo clasifica como **ATRASO (1)**."
+            )
+        else:
+            explicacion = (
+                f"Como {proba_atraso:.3f} < {BEST_THR:.2f}, "
+                f"el modelo clasifica como **NO_ATRASO (0)**."
+            )
 
         # Métricas tipo “tarjeta”
         colA, colB = st.columns(2)
         with colA:
-            
+            st.markdown('<div class="metric-card">', unsafe_allow_html=True)
             st.markdown('<div class="metric-label">Probabilidad ATRASO = 1</div>', unsafe_allow_html=True)
             st.markdown(
                 f'<div class="metric-value">{proba_atraso:.3f}</div>',
@@ -337,31 +346,26 @@ with tab_ind:
             st.progress(min(max(proba_atraso, 0.0), 1.0))
 
         with colB:
-            
+            st.markdown('<div class="metric-card">', unsafe_allow_html=True)
             st.markdown('<div class="metric-label">Decisión del modelo</div>', unsafe_allow_html=True)
             st.markdown(
                 f'<div class="metric-value">{pred_label} ({pred_int})</div>',
                 unsafe_allow_html=True,
             )
-            if pred_int == 1:
-                st.markdown(
-                    '<div class="metric-sub">El estudiante está <b>en riesgo de atraso</b>.</div>',
-                    unsafe_allow_html=True,
-                )
-            else:
-                st.markdown(
-                    '<div class="metric-sub">El estudiante <b>no</b> está en riesgo de atraso.</div>',
-                    unsafe_allow_html=True,
-                )
+            st.markdown(
+                f'<div class="metric-sub">{explicacion}</div>',
+                unsafe_allow_html=True,
+            )
             st.markdown('</div>', unsafe_allow_html=True)
 
-    st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)  # cierre .card
 
 # ==============================
 #  Predicción por lote (CSV)
 # ==============================
 with tab_batch:
-    
+    st.markdown('<div class="card">', unsafe_allow_html=True)
+
     st.markdown(
         '<h4 style="margin-bottom:0.2rem;">Predicción por lote (CSV)</h4>',
         unsafe_allow_html=True,
@@ -404,4 +408,4 @@ with tab_batch:
                 mime="text/csv",
             )
 
-    st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)  # cierre .card
