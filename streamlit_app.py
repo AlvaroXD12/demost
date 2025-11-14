@@ -4,6 +4,52 @@ import os
 import pandas as pd
 
 # ==============================
+#  Configuración general
+# ==============================
+st.set_page_config(
+    page_title="Clasificación — Atraso escolar",
+    page_icon="🎓",
+    layout="centered",
+)
+
+# Estilos básicos tipo tarjeta
+st.markdown(
+    """
+<style>
+.card {
+    background-color: #ffffff;
+    border-radius: 1rem;
+    padding: 1.5rem 1.75rem;
+    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.12);
+    border: 1px solid #e5e7eb;
+}
+.metric-card {
+    border-radius: 0.9rem;
+    padding: 0.9rem 1.1rem;
+    background: #111827;
+    color: #f9fafb;
+    border: 1px solid #1f2937;
+}
+.metric-label {
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: #9ca3af;
+}
+.metric-value {
+    font-size: 1.7rem;
+    font-weight: 700;
+}
+.metric-sub {
+    font-size: 0.9rem;
+    color: #d1d5db;
+}
+</style>
+""",
+    unsafe_allow_html=True,
+)
+
+# ==============================
 #  Carga del modelo entrenado
 # ==============================
 ART_DIR = "artefactos"   # carpeta donde subiste el .joblib
@@ -22,55 +68,20 @@ REV_LABEL = {v: k for k, v in LABEL_MAP.items()}  # {0:"NO_ATRASO",1:"ATRASO"}
 
 BEST_THR = 0.5  # mismo umbral que usaste en tu notebook
 
+# Variables que usa el modelo (tus features relevantes)
+FEATURES = [
+    "sex", "age", "studytime", "failures", "absences",
+    "schoolsup", "famsup", "activities", "higher",
+    "internet", "goout", "Dalc", "Walc",
+    "famrel", "freetime", "health", "Medu", "Fedu",
+]
+
 # ==============================
 #  Mapas para mostrar en español
 # ==============================
-SCHOOL_OPTS = {
-    "Gabriel Pereira (GP)": "GP",
-    "Mousinho da Silveira (MS)": "MS",
-}
-
 SEX_OPTS = {
     "Femenino": "F",
     "Masculino": "M",
-}
-
-ADDRESS_OPTS = {
-    "Urbano": "U",
-    "Rural": "R",
-}
-
-FAMSIZE_OPTS = {
-    "≤ 3 miembros": "LE3",
-    "> 3 miembros": "GT3",
-}
-
-PSTATUS_OPTS = {
-    "Padres juntos": "T",
-    "Padres separados": "A",
-}
-
-MJOB_OPTS = {
-    "Docente": "teacher",
-    "Salud": "health",
-    "Servicios públicos": "services",
-    "Ama de casa": "at_home",
-    "Otro": "other",
-}
-
-FJOB_OPTS = MJOB_OPTS  # mismo catálogo
-
-REASON_OPTS = {
-    "Cerca de casa": "home",
-    "Reputación del colegio": "reputation",
-    "Preferencia por el curso": "course",
-    "Otro motivo": "other",
-}
-
-GUARDIAN_OPTS = {
-    "Madre": "mother",
-    "Padre": "father",
-    "Otro": "other",
 }
 
 YESNO_OPTS = {
@@ -78,265 +89,216 @@ YESNO_OPTS = {
     "No": "no",
 }
 
-ROMANTIC_OPTS = YESNO_OPTS
-INTERNET_OPTS = YESNO_OPTS
-HIGHER_OPTS = YESNO_OPTS
-NURSERY_OPTS = YESNO_OPTS
-ACTIVITIES_OPTS = YESNO_OPTS
-SCHOOLSUP_OPTS = YESNO_OPTS
-FAMSUP_OPTS = YESNO_OPTS
-PAID_OPTS = YESNO_OPTS
-
 # ==============================
-#  Interfaz de la aplicación
+#  Header
 # ==============================
-st.title("Predicción de atraso escolar por hábitos")
-
-st.write(
-    """
-Esta aplicación usa un modelo de **minería de datos** para predecir si un estudiante
-se encuentra en **riesgo de atraso escolar (ATRASO = 1)** en función de sus hábitos,
-características familiares y contexto.
-"""
+st.markdown("### 🤖 Clasificación — Atraso escolar")
+st.caption(
+    "App de inferencia ML para predecir **ATRASO (1)** vs **NO_ATRASO (0)** "
+    "a partir de hábitos y contexto del estudiante."
 )
 
-with st.form("form_atraso"):
-    st.subheader("Datos del estudiante")
-
-    col1, col2, col3 = st.columns(3)
-
-    # -------- Columna 1 --------
-    with col1:
-        school_es = st.selectbox(
-            "Colegio",
-            list(SCHOOL_OPTS.keys()),
-            help="Selecciona el colegio del estudiante"
-        )
-        sex_es = st.selectbox(
-            "Sexo",
-            list(SEX_OPTS.keys()),
-            help="Sexo biológico del estudiante"
-        )
-        age = st.number_input(
-            "Edad",
-            min_value=15,
-            max_value=25,
-            value=17
-        )
-        address_es = st.selectbox(
-            "Tipo de domicilio",
-            list(ADDRESS_OPTS.keys()),
-            help="Urbano o rural"
-        )
-        famsize_es = st.selectbox(
-            "Tamaño de la familia",
-            list(FAMSIZE_OPTS.keys()),
-            help="Número de miembros del hogar"
-        )
-        Pstatus_es = st.selectbox(
-            "Situación de los padres",
-            list(PSTATUS_OPTS.keys()),
-            help="Si viven juntos o separados"
-        )
-
-    # -------- Columna 2 --------
-    with col2:
-        Medu = st.slider(
-            "Educación de la madre",
-            0, 4, 2,
-            help="0 = ninguna, 1 = primaria, 2 = 5º-9º, 3 = secundaria, 4 = superior"
-        )
-        Fedu = st.slider(
-            "Educación del padre",
-            0, 4, 2,
-            help="0 = ninguna, 1 = primaria, 2 = 5º-9º, 3 = secundaria, 4 = superior"
-        )
-        Mjob_es = st.selectbox(
-            "Trabajo de la madre",
-            list(MJOB_OPTS.keys())
-        )
-        Fjob_es = st.selectbox(
-            "Trabajo del padre",
-            list(FJOB_OPTS.keys())
-        )
-        reason_es = st.selectbox(
-            "Razón para elegir el colegio",
-            list(REASON_OPTS.keys())
-        )
-        guardian_es = st.selectbox(
-            "Apoderado principal",
-            list(GUARDIAN_OPTS.keys())
-        )
-
-    # -------- Columna 3 --------
-    with col3:
-        traveltime = st.slider(
-            "Tiempo de viaje al colegio",
-            1, 4, 1,
-            help="1:<15m, 2:15-30m, 3:30-60m, 4:>1h"
-        )
-        studytime = st.slider(
-            "Horas de estudio semanal",
-            1, 4, 2,
-            help="1:<2h, 2:2-5h, 3:5-10h, 4:>10h"
-        )
-        failures = st.slider(
-            "Número de repeticiones previas",
-            0, 4, 0,
-            help="Número de veces que repitió curso/asignatura"
-        )
-        schoolsup_es = st.selectbox(
-            "Apoyo educativo extra del colegio",
-            list(SCHOOLSUP_OPTS.keys())
-        )
-        famsup_es = st.selectbox(
-            "Apoyo educativo de la familia",
-            list(FAMSUP_OPTS.keys())
-        )
-        paid_es = st.selectbox(
-            "Clases particulares pagadas",
-            list(PAID_OPTS.keys())
-        )
-
-    col4, col5, col6 = st.columns(3)
-
-    # -------- Columna 4 --------
-    with col4:
-        activities_es = st.selectbox(
-            "Actividades extracurriculares",
-            list(ACTIVITIES_OPTS.keys())
-        )
-        nursery_es = st.selectbox(
-            "Asistió a educación inicial",
-            list(NURSERY_OPTS.keys())
-        )
-        higher_es = st.selectbox(
-            "Desea estudios superiores",
-            list(HIGHER_OPTS.keys())
-        )
-        internet_es = st.selectbox(
-            "Acceso a Internet en casa",
-            list(INTERNET_OPTS.keys())
-        )
-        romantic_es = st.selectbox(
-            "Tiene relación romántica",
-            list(ROMANTIC_OPTS.keys())
-        )
-
-    # -------- Columna 5 --------
-    with col5:
-        famrel = st.slider(
-            "Relación con la familia",
-            1, 5, 4,
-            help="1 = muy mala, 5 = excelente"
-        )
-        freetime = st.slider(
-            "Tiempo libre después de clase",
-            1, 5, 3,
-            help="1 = muy poco, 5 = mucho"
-        )
-        goout = st.slider(
-            "Frecuencia de salir con amigos",
-            1, 5, 2,
-            help="1 = casi nunca, 5 = muy frecuente"
-        )
-
-    # -------- Columna 6 --------
-    with col6:
-        Dalc = st.slider(
-            "Consumo de alcohol (días de semana)",
-            1, 5, 1,
-            help="1 = muy bajo, 5 = muy alto"
-        )
-        Walc = st.slider(
-            "Consumo de alcohol (fin de semana)",
-            1, 5, 1,
-            help="1 = muy bajo, 5 = muy alto"
-        )
-        health = st.slider(
-            "Estado de salud actual",
-            1, 5, 4,
-            help="1 = muy malo, 5 = muy bueno"
-        )
-        absences = st.number_input(
-            "Número de inasistencias",
-            min_value=0,
-            max_value=100,
-            value=0
-        )
-
-    submitted = st.form_submit_button("Predecir atraso")
+tab_ind, tab_batch = st.tabs(["🔹 Predicción individual", "📂 Predicción por lote (CSV)"])
 
 # ==============================
-#  Predicción
+#  Predicción individual
 # ==============================
-if submitted:
-    # Mapear selecciones en español a códigos originales del dataset
-    school = SCHOOL_OPTS[school_es]
-    sex = SEX_OPTS[sex_es]
-    address = ADDRESS_OPTS[address_es]
-    famsize = FAMSIZE_OPTS[famsize_es]
-    Pstatus = PSTATUS_OPTS[Pstatus_es]
-    Mjob = MJOB_OPTS[Mjob_es]
-    Fjob = FJOB_OPTS[Fjob_es]
-    reason = REASON_OPTS[reason_es]
-    guardian = GUARDIAN_OPTS[guardian_es]
-    schoolsup = SCHOOLSUP_OPTS[schoolsup_es]
-    famsup = FAMSUP_OPTS[famsup_es]
-    paid = PAID_OPTS[paid_es]
-    activities = ACTIVITIES_OPTS[activities_es]
-    nursery = NURSERY_OPTS[nursery_es]
-    higher = HIGHER_OPTS[higher_es]
-    internet = INTERNET_OPTS[internet_es]
-    romantic = ROMANTIC_OPTS[romantic_es]
+with tab_ind:
+    st.markdown('<div class="card">', unsafe_allow_html=True)
 
-    # Construir el diccionario con los nombres EXACTOS de las columnas del dataset
-    data = {
-        "school": school,
-        "sex": sex,
-        "age": age,
-        "address": address,
-        "famsize": famsize,
-        "Pstatus": Pstatus,
-        "Medu": Medu,
-        "Fedu": Fedu,
-        "Mjob": Mjob,
-        "Fjob": Fjob,
-        "reason": reason,
-        "guardian": guardian,
-        "traveltime": traveltime,
-        "studytime": studytime,
-        "failures": failures,
-        "schoolsup": schoolsup,
-        "famsup": famsup,
-        "paid": paid,
-        "activities": activities,
-        "nursery": nursery,
-        "higher": higher,
-        "internet": internet,
-        "romantic": romantic,
-        "famrel": famrel,
-        "freetime": freetime,
-        "goout": goout,
-        "Dalc": Dalc,
-        "Walc": Walc,
-        "health": health,
-        "absences": absences,
-    }
+    with st.form("form_atraso"):
+        st.markdown("#### Predicción individual")
 
-    df = pd.DataFrame([data])
+        col1, col2, col3 = st.columns(3)
 
-    # Probabilidad de ATRASO (clase 1)
-    proba_atraso = winner_pipe.predict_proba(df)[0, 1]
-    pred_int = int(proba_atraso >= BEST_THR)
-    pred_label = REV_LABEL[pred_int]
+        # -------- Columna 1: perfil --------
+        with col1:
+            sex_es = st.selectbox("Sexo", list(SEX_OPTS.keys()))
+            age = st.number_input("Edad", min_value=15, max_value=25, value=17)
+            Medu = st.slider(
+                "Educación de la madre",
+                0, 4, 2,
+                help="0 = ninguna, 1 = primaria, 2 = 5º-9º, 3 = secundaria, 4 = superior",
+            )
+            Fedu = st.slider(
+                "Educación del padre",
+                0, 4, 2,
+                help="0 = ninguna, 1 = primaria, 2 = 5º-9º, 3 = secundaria, 4 = superior",
+            )
+            health = st.slider(
+                "Salud actual",
+                1, 5, 4,
+                help="1 = muy mala, 5 = muy buena",
+            )
 
-    st.subheader("Resultado")
-    st.write(f"**Predicción del modelo:** {pred_label}")
-    st.write(f"**Probabilidad estimada de ATRASO:** {proba_atraso:.3f}")
-    st.progress(float(proba_atraso))
+        # -------- Columna 2: hábitos de estudio --------
+        with col2:
+            studytime = st.slider(
+                "Horas de estudio semanal",
+                1, 4, 2,
+                help="1:<2h, 2:2-5h, 3:5-10h, 4:>10h",
+            )
+            failures = st.slider(
+                "Repeticiones previas",
+                0, 4, 0,
+                help="Número de veces que repitió curso/asignatura",
+            )
+            absences = st.number_input(
+                "Inasistencias",
+                min_value=0, max_value=100, value=0,
+            )
+            famrel = st.slider(
+                "Relación con la familia",
+                1, 5, 4,
+                help="1 = muy mala, 5 = excelente",
+            )
+            freetime = st.slider(
+                "Tiempo libre después de clases",
+                1, 5, 3,
+                help="1 = muy poco, 5 = mucho",
+            )
 
-    if pred_int == 1:
-        st.warning("Este estudiante está en **riesgo de atraso escolar** según el modelo.")
-    else:
-        st.success("Este estudiante **no** está en riesgo de atraso escolar según el modelo.")
+        # -------- Columna 3: apoyo y ocio --------
+        with col3:
+            schoolsup_es = st.selectbox(
+                "Apoyo educativo del colegio",
+                list(YESNO_OPTS.keys()),
+            )
+            famsup_es = st.selectbox(
+                "Apoyo educativo de la familia",
+                list(YESNO_OPTS.keys()),
+            )
+            activities_es = st.selectbox(
+                "Actividades extracurriculares",
+                list(YESNO_OPTS.keys()),
+            )
+            higher_es = st.selectbox(
+                "Desea estudios superiores",
+                list(YESNO_OPTS.keys()),
+            )
+            internet_es = st.selectbox(
+                "Acceso a Internet en casa",
+                list(YESNO_OPTS.keys()),
+            )
+            goout = st.slider(
+                "Salir con amigos",
+                1, 5, 2,
+                help="1 = casi nunca, 5 = muy frecuente",
+            )
+            Dalc = st.slider(
+                "Alcohol (días de semana)",
+                1, 5, 1,
+                help="1 = muy bajo, 5 = muy alto",
+            )
+            Walc = st.slider(
+                "Alcohol (fin de semana)",
+                1, 5, 1,
+                help="1 = muy bajo, 5 = muy alto",
+            )
+
+        submitted = st.form_submit_button("Predecir atraso")
+
+    if submitted:
+        # Mapear selecciones en español a códigos originales
+        sex = SEX_OPTS[sex_es]
+        schoolsup = YESNO_OPTS[schoolsup_es]
+        famsup = YESNO_OPTS[famsup_es]
+        activities = YESNO_OPTS[activities_es]
+        higher = YESNO_OPTS[higher_es]
+        internet = YESNO_OPTS[internet_es]
+
+        # Construir diccionario con las features que usa el modelo
+        data = {
+            "sex": sex,
+            "age": age,
+            "studytime": studytime,
+            "failures": failures,
+            "absences": absences,
+            "schoolsup": schoolsup,
+            "famsup": famsup,
+            "activities": activities,
+            "higher": higher,
+            "internet": internet,
+            "goout": goout,
+            "Dalc": Dalc,
+            "Walc": Walc,
+            "famrel": famrel,
+            "freetime": freetime,
+            "health": health,
+            "Medu": Medu,
+            "Fedu": Fedu,
+        }
+
+        df = pd.DataFrame([data])
+
+        # Probabilidad de ATRASO (clase 1)
+        proba_atraso = float(winner_pipe.predict_proba(df)[0, 1])
+        pred_int = int(proba_atraso >= BEST_THR)
+        pred_label = REV_LABEL[pred_int]
+
+        # Métricas tipo “tarjeta”
+        colA, colB = st.columns(2)
+        with colA:
+            st.markdown('<div class="metric-card">', unsafe_allow_html=True)
+            st.markdown('<div class="metric-label">Probabilidad ATRASO = 1</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="metric-value">{proba_atraso:.3f}</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="metric-sub">Umbral actual: {BEST_THR:.2f}</div>', unsafe_allow_html=True)
+            st.markdown('</div>', unsafe_allow_html=True)
+
+        with colB:
+            st.markdown('<div class="metric-card">', unsafe_allow_html=True)
+            st.markdown('<div class="metric-label">Decisión del modelo</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="metric-value">{pred_label} ({pred_int})</div>', unsafe_allow_html=True)
+            if pred_int == 1:
+                st.markdown('<div class="metric-sub">El estudiante está en riesgo de atraso.</div>', unsafe_allow_html=True)
+            else:
+                st.markdown('<div class="metric-sub">El estudiante no está en riesgo de atraso.</div>', unsafe_allow_html=True)
+            st.markdown('</div>', unsafe_allow_html=True)
+
+    st.markdown('</div>', unsafe_allow_html=True)
+
+# ==============================
+#  Predicción por lote (CSV)
+# ==============================
+with tab_batch:
+    st.markdown('<div class="card">', unsafe_allow_html=True)
+    st.markdown("#### Predicción por lote (CSV)")
+
+    st.write(
+        "Sube un archivo **CSV** que contenga al menos las siguientes columnas "
+        f"(con estos nombres exactos): `{', '.join(FEATURES)}`."
+    )
+
+    file = st.file_uploader("Archivo CSV", type=["csv"])
+
+    if file is not None:
+        df_in = pd.read_csv(file)
+
+        faltantes = [c for c in FEATURES if c not in df_in.columns]
+        if faltantes:
+            st.error(
+                "Faltan columnas en el CSV:\n\n- " + "\n- ".join(faltantes)
+                + "\n\nAsegúrate de que los nombres coincidan exactamente."
+            )
+        else:
+            proba = winner_pipe.predict_proba(df_in[FEATURES])[:, 1]
+            pred_int = (proba >= BEST_THR).astype(int)
+            pred_label = [REV_LABEL[i] for i in pred_int]
+
+            df_out = df_in.copy()
+            df_out["proba_atraso"] = proba
+            df_out["pred_int"] = pred_int
+            df_out["pred_label"] = pred_label
+
+            st.write("Vista previa de resultados:")
+            st.dataframe(df_out.head())
+
+            csv_out = df_out.to_csv(index=False).encode("utf-8")
+            st.download_button(
+                "⬇️ Descargar resultados (CSV)",
+                data=csv_out,
+                file_name="predicciones_atraso.csv",
+                mime="text/csv",
+            )
+
+    st.markdown('</div>', unsafe_allow_html=True)
