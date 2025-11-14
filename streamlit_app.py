@@ -12,17 +12,43 @@ st.set_page_config(
     layout="centered",
 )
 
-# Estilos básicos tipo tarjeta
+# Estilos (fondo CLARO + tarjetas)
 st.markdown(
     """
 <style>
+/* Fondo general claro */
+main, .stApp {
+    background: radial-gradient(circle at top, #e5e7eb 0, #f9fafb 45%);
+}
+
+/* Tabs tipo pastilla */
+.stTabs [data-baseweb="tab-list"] {
+    gap: 0.15rem;
+}
+.stTabs [data-baseweb="tab"] {
+    border-radius: 999px;
+    padding: 0.35rem 0.9rem;
+    background-color: #e5e7eb;
+    color: #374151;
+    font-weight: 500;
+    border: none;
+}
+.stTabs [aria-selected="true"] {
+    background: #2563eb !important;
+    color: #f9fafb !important;
+}
+
+/* Tarjeta principal */
 .card {
     background-color: #ffffff;
     border-radius: 1rem;
     padding: 1.5rem 1.75rem;
-    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.12);
+    box-shadow: 0 16px 40px rgba(15, 23, 42, 0.1);
     border: 1px solid #e5e7eb;
+    color: #111827;
 }
+
+/* Tarjetas de métricas */
 .metric-card {
     border-radius: 0.9rem;
     padding: 0.9rem 1.1rem;
@@ -44,6 +70,24 @@ st.markdown(
     font-size: 0.9rem;
     color: #d1d5db;
 }
+
+/* Botón principal */
+.stButton>button {
+    border-radius: 999px;
+    background: linear-gradient(90deg, #2563eb, #3b82f6);
+    border: none;
+    color: #f9fafb;
+    font-weight: 600;
+    padding: 0.45rem 1.5rem;
+}
+.stButton>button:hover {
+    filter: brightness(1.05);
+}
+
+/* Títulos dentro de la card */
+.card h4 {
+    margin-top: 0;
+}
 </style>
 """,
     unsafe_allow_html=True,
@@ -56,19 +100,18 @@ ART_DIR = "artefactos"   # carpeta donde subiste el .joblib
 
 @st.cache_resource
 def load_pipeline():
-    # 🔴 Cambia el nombre si tu archivo se llama distinto
     model_path = os.path.join(ART_DIR, "modelo_atrasos.joblib")
     return joblib.load(model_path)
 
 winner_pipe = load_pipeline()
 
-# Mapa de etiquetas fijo para tu problema
+# Mapa de etiquetas
 LABEL_MAP = {"NO_ATRASO": 0, "ATRASO": 1}
-REV_LABEL = {v: k for k, v in LABEL_MAP.items()}  # {0:"NO_ATRASO",1:"ATRASO"}
+REV_LABEL = {v: k for k, v in LABEL_MAP.items()}
 
-BEST_THR = 0.5  # mismo umbral que usaste en tu notebook
+BEST_THR = 0.5
 
-# Variables que usa el modelo (tus features relevantes)
+# Variables usadas por el modelo
 FEATURES = [
     "sex", "age", "studytime", "failures", "absences",
     "schoolsup", "famsup", "activities", "higher",
@@ -83,7 +126,6 @@ SEX_OPTS = {
     "Femenino": "F",
     "Masculino": "M",
 }
-
 YESNO_OPTS = {
     "Sí": "yes",
     "No": "no",
@@ -108,6 +150,13 @@ with tab_ind:
 
     with st.form("form_atraso"):
         st.markdown("#### Predicción individual")
+        st.caption("Completa los datos del estudiante y presiona **Predecir atraso**.")
+
+        top1, top2 = st.columns(2)
+        with top1:
+            st.markdown("##### 👤 Perfil")
+        with top2:
+            st.markdown("##### 📚 Estudio y familia")
 
         col1, col2, col3 = st.columns(3)
 
@@ -115,23 +164,13 @@ with tab_ind:
         with col1:
             sex_es = st.selectbox("Sexo", list(SEX_OPTS.keys()))
             age = st.number_input("Edad", min_value=15, max_value=25, value=17)
-            Medu = st.slider(
-                "Educación de la madre",
-                0, 4, 2,
-                help="0 = ninguna, 1 = primaria, 2 = 5º-9º, 3 = secundaria, 4 = superior",
-            )
-            Fedu = st.slider(
-                "Educación del padre",
-                0, 4, 2,
-                help="0 = ninguna, 1 = primaria, 2 = 5º-9º, 3 = secundaria, 4 = superior",
-            )
             health = st.slider(
                 "Salud actual",
                 1, 5, 4,
                 help="1 = muy mala, 5 = muy buena",
             )
 
-        # -------- Columna 2: hábitos de estudio --------
+        # -------- Columna 2: estudio --------
         with col2:
             studytime = st.slider(
                 "Horas de estudio semanal",
@@ -147,6 +186,14 @@ with tab_ind:
                 "Inasistencias",
                 min_value=0, max_value=100, value=0,
             )
+            goout = st.slider(
+                "Salir con amigos",
+                1, 5, 2,
+                help="1 = casi nunca, 5 = muy frecuente",
+            )
+
+        # -------- Columna 3: familia y apoyo --------
+        with col3:
             famrel = st.slider(
                 "Relación con la familia",
                 1, 5, 4,
@@ -157,9 +204,23 @@ with tab_ind:
                 1, 5, 3,
                 help="1 = muy poco, 5 = mucho",
             )
+            Medu = st.slider(
+                "Educación de la madre",
+                0, 4, 2,
+                help="0 = ninguna, 1 = primaria, 2 = 5º-9º, 3 = secundaria, 4 = superior",
+            )
+            Fedu = st.slider(
+                "Educación del padre",
+                0, 4, 2,
+                help="0 = ninguna, 1 = primaria, 2 = 5º-9º, 3 = secundaria, 4 = superior",
+            )
 
-        # -------- Columna 3: apoyo y ocio --------
-        with col3:
+        st.markdown("---")
+
+        col4, col5, col6 = st.columns(3)
+
+        # -------- Columna 4: apoyos --------
+        with col4:
             schoolsup_es = st.selectbox(
                 "Apoyo educativo del colegio",
                 list(YESNO_OPTS.keys()),
@@ -168,6 +229,9 @@ with tab_ind:
                 "Apoyo educativo de la familia",
                 list(YESNO_OPTS.keys()),
             )
+
+        # -------- Columna 5: motivación --------
+        with col5:
             activities_es = st.selectbox(
                 "Actividades extracurriculares",
                 list(YESNO_OPTS.keys()),
@@ -180,11 +244,9 @@ with tab_ind:
                 "Acceso a Internet en casa",
                 list(YESNO_OPTS.keys()),
             )
-            goout = st.slider(
-                "Salir con amigos",
-                1, 5, 2,
-                help="1 = casi nunca, 5 = muy frecuente",
-            )
+
+        # -------- Columna 6: consumo --------
+        with col6:
             Dalc = st.slider(
                 "Alcohol (días de semana)",
                 1, 5, 1,
@@ -241,18 +303,35 @@ with tab_ind:
         with colA:
             st.markdown('<div class="metric-card">', unsafe_allow_html=True)
             st.markdown('<div class="metric-label">Probabilidad ATRASO = 1</div>', unsafe_allow_html=True)
-            st.markdown(f'<div class="metric-value">{proba_atraso:.3f}</div>', unsafe_allow_html=True)
-            st.markdown(f'<div class="metric-sub">Umbral actual: {BEST_THR:.2f}</div>', unsafe_allow_html=True)
+            st.markdown(
+                f'<div class="metric-value">{proba_atraso:.3f}</div>',
+                unsafe_allow_html=True,
+            )
+            st.markdown(
+                f'<div class="metric-sub">Equivalente a {proba_atraso*100:.1f}% &nbsp;|&nbsp; Umbral: {BEST_THR:.2f}</div>',
+                unsafe_allow_html=True,
+            )
             st.markdown('</div>', unsafe_allow_html=True)
+
+            st.progress(min(max(proba_atraso, 0.0), 1.0))
 
         with colB:
             st.markdown('<div class="metric-card">', unsafe_allow_html=True)
             st.markdown('<div class="metric-label">Decisión del modelo</div>', unsafe_allow_html=True)
-            st.markdown(f'<div class="metric-value">{pred_label} ({pred_int})</div>', unsafe_allow_html=True)
+            st.markdown(
+                f'<div class="metric-value">{pred_label} ({pred_int})</div>',
+                unsafe_allow_html=True,
+            )
             if pred_int == 1:
-                st.markdown('<div class="metric-sub">El estudiante está en riesgo de atraso.</div>', unsafe_allow_html=True)
+                st.markdown(
+                    '<div class="metric-sub">El estudiante está en <b>riesgo de atraso</b>.</div>',
+                    unsafe_allow_html=True,
+                )
             else:
-                st.markdown('<div class="metric-sub">El estudiante no está en riesgo de atraso.</div>', unsafe_allow_html=True)
+                st.markdown(
+                    '<div class="metric-sub">El estudiante <b>no</b> está en riesgo de atraso.</div>',
+                    unsafe_allow_html=True,
+                )
             st.markdown('</div>', unsafe_allow_html=True)
 
     st.markdown('</div>', unsafe_allow_html=True)
