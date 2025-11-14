@@ -12,13 +12,13 @@ st.set_page_config(
     layout="centered",
 )
 
-# Estilos (fondo CLARO + tarjetas)
+# Estilos (fondo CLARO + tarjetas + texto oscuro)
 st.markdown(
     """
 <style>
 /* Fondo general claro */
 main, .stApp {
-    background: radial-gradient(circle at top, #e5e7eb 0, #f9fafb 45%);
+    background: #f3f4f6;
 }
 
 /* Tabs tipo pastilla */
@@ -43,9 +43,17 @@ main, .stApp {
     background-color: #ffffff;
     border-radius: 1rem;
     padding: 1.5rem 1.75rem;
-    box-shadow: 0 16px 40px rgba(15, 23, 42, 0.1);
+    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.12);
     border: 1px solid #e5e7eb;
     color: #111827;
+}
+
+/* Texto/form labels más oscuros */
+label, .card p, .card h4, .card h5, .card h6 {
+    color: #111827 !important;
+}
+small, .stCaption {
+    color: #6b7280 !important;
 }
 
 /* Tarjetas de métricas */
@@ -152,26 +160,50 @@ with tab_ind:
         st.markdown("#### Predicción individual")
         st.caption("Completa los datos del estudiante y presiona **Predecir atraso**.")
 
-        top1, top2 = st.columns(2)
-        with top1:
-            st.markdown("##### 👤 Perfil")
-        with top2:
-            st.markdown("##### 📚 Estudio y familia")
-
         col1, col2, col3 = st.columns(3)
 
-        # -------- Columna 1: perfil --------
+        # ============================
+        # Columna 1 (2 selects + 4 num)
+        # ============================
         with col1:
+            # SELECTS primero
             sex_es = st.selectbox("Sexo", list(SEX_OPTS.keys()))
+            schoolsup_es = st.selectbox(
+                "Apoyo educativo del colegio",
+                list(YESNO_OPTS.keys()),
+            )
+
+            # SLIDERS / NUMÉRICOS después
             age = st.number_input("Edad", min_value=15, max_value=25, value=17)
             health = st.slider(
                 "Salud actual",
                 1, 5, 4,
                 help="1 = muy mala, 5 = muy buena",
             )
+            Dalc = st.slider(
+                "Alcohol (días de semana)",
+                1, 5, 1,
+                help="1 = muy bajo, 5 = muy alto",
+            )
+            Walc = st.slider(
+                "Alcohol (fin de semana)",
+                1, 5, 1,
+                help="1 = muy bajo, 5 = muy alto",
+            )
 
-        # -------- Columna 2: estudio --------
+        # ============================
+        # Columna 2 (2 selects + 4 num)
+        # ============================
         with col2:
+            famsup_es = st.selectbox(
+                "Apoyo educativo de la familia",
+                list(YESNO_OPTS.keys()),
+            )
+            activities_es = st.selectbox(
+                "Actividades extracurriculares",
+                list(YESNO_OPTS.keys()),
+            )
+
             studytime = st.slider(
                 "Horas de estudio semanal",
                 1, 4, 2,
@@ -192,8 +224,19 @@ with tab_ind:
                 help="1 = casi nunca, 5 = muy frecuente",
             )
 
-        # -------- Columna 3: familia y apoyo --------
+        # ============================
+        # Columna 3 (2 selects + 4 num)
+        # ============================
         with col3:
+            higher_es = st.selectbox(
+                "Desea estudios superiores",
+                list(YESNO_OPTS.keys()),
+            )
+            internet_es = st.selectbox(
+                "Acceso a Internet en casa",
+                list(YESNO_OPTS.keys()),
+            )
+
             famrel = st.slider(
                 "Relación con la familia",
                 1, 5, 4,
@@ -213,49 +256,6 @@ with tab_ind:
                 "Educación del padre",
                 0, 4, 2,
                 help="0 = ninguna, 1 = primaria, 2 = 5º-9º, 3 = secundaria, 4 = superior",
-            )
-
-        st.markdown("---")
-
-        col4, col5, col6 = st.columns(3)
-
-        # -------- Columna 4: apoyos --------
-        with col4:
-            schoolsup_es = st.selectbox(
-                "Apoyo educativo del colegio",
-                list(YESNO_OPTS.keys()),
-            )
-            famsup_es = st.selectbox(
-                "Apoyo educativo de la familia",
-                list(YESNO_OPTS.keys()),
-            )
-
-        # -------- Columna 5: motivación --------
-        with col5:
-            activities_es = st.selectbox(
-                "Actividades extracurriculares",
-                list(YESNO_OPTS.keys()),
-            )
-            higher_es = st.selectbox(
-                "Desea estudios superiores",
-                list(YESNO_OPTS.keys()),
-            )
-            internet_es = st.selectbox(
-                "Acceso a Internet en casa",
-                list(YESNO_OPTS.keys()),
-            )
-
-        # -------- Columna 6: consumo --------
-        with col6:
-            Dalc = st.slider(
-                "Alcohol (días de semana)",
-                1, 5, 1,
-                help="1 = muy bajo, 5 = muy alto",
-            )
-            Walc = st.slider(
-                "Alcohol (fin de semana)",
-                1, 5, 1,
-                help="1 = muy bajo, 5 = muy alto",
             )
 
         submitted = st.form_submit_button("Predecir atraso")
@@ -324,7 +324,7 @@ with tab_ind:
             )
             if pred_int == 1:
                 st.markdown(
-                    '<div class="metric-sub">El estudiante está en <b>riesgo de atraso</b>.</div>',
+                    '<div class="metric-sub">El estudiante está <b>en riesgo de atraso</b>.</div>',
                     unsafe_allow_html=True,
                 )
             else:
