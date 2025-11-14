@@ -1,11 +1,20 @@
 import streamlit as st
-import pandas as pd
 import joblib
-import json
 import os
 
-# ----------------- Cargar artefactos -----------------
-ART_DIR = os.path.join("artefactos", "v1")
+# Carpeta donde está el modelo
+ART_DIR = "artefactos"   # <-- SIN v1 ni nada raro
+
+@st.cache_resource
+def load_pipeline():
+    # Nombre EXACTO del archivo que está en artefactos/
+    model_path = os.path.join(ART_DIR, "modelo_pima.pkl")
+    # si tu archivo se llama, por ejemplo, modelo_atraso.pkl, pon eso:
+    # model_path = os.path.join(ART_DIR, "modelo_atraso.pkl")
+    return joblib.load(model_path)
+
+winner_pipe = load_pipeline()
+
 
 @st.cache_resource
 def load_pipeline():
