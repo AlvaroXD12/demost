@@ -57,7 +57,7 @@ ART_DIR = "artefactos"   # carpeta donde subiste el .joblib
 @st.cache_resource
 def load_pipeline():
     # 🔴 Cambia el nombre si tu archivo se llama distinto
-    model_path = os.path.join(ART_DIR, "modelo_atraso.joblib")
+    model_path = os.path.join(ART_DIR, "modelo_atrasos.joblib")
     return joblib.load(model_path)
 
 winner_pipe = load_pipeline()
