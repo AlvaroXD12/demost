@@ -44,16 +44,18 @@ main, .stApp {
     border-radius: 1rem;
     padding: 1.5rem 1.75rem;
     box-shadow: 0 12px 30px rgba(15, 23, 42, 0.12);
-    border: 1px solid #e5e7eb;
+    border: 1px solid #d1d5db;
     color: #111827;
 }
 
-/* Texto/form labels más oscuros */
-label, .card p, .card h4, .card h5, .card h6 {
+/* Texto más oscuro dentro de la card */
+.card h1, .card h2, .card h3, .card h4, .card h5, .card h6,
+.card p, .card label {
     color: #111827 !important;
 }
-small, .stCaption {
-    color: #6b7280 !important;
+
+h1, h2, h3 {
+    color: #111827 !important;
 }
 
 /* Tarjetas de métricas */
@@ -90,11 +92,6 @@ small, .stCaption {
 }
 .stButton>button:hover {
     filter: brightness(1.05);
-}
-
-/* Títulos dentro de la card */
-.card h4 {
-    margin-top: 0;
 }
 </style>
 """,
@@ -142,7 +139,10 @@ YESNO_OPTS = {
 # ==============================
 #  Header
 # ==============================
-st.markdown("### 🤖 Clasificación — Atraso escolar")
+st.markdown(
+    '<h3 style="font-weight:700; margin-bottom:0.15rem;">🤖 Clasificación — Atraso escolar</h3>',
+    unsafe_allow_html=True,
+)
 st.caption(
     "App de inferencia ML para predecir **ATRASO (1)** vs **NO_ATRASO (0)** "
     "a partir de hábitos y contexto del estudiante."
@@ -157,24 +157,28 @@ with tab_ind:
     st.markdown('<div class="card">', unsafe_allow_html=True)
 
     with st.form("form_atraso"):
-        st.markdown("#### Predicción individual")
+        st.markdown(
+            '<h4 style="margin-bottom:0.2rem;">Predicción individual</h4>',
+            unsafe_allow_html=True,
+        )
         st.caption("Completa los datos del estudiante y presiona **Predecir atraso**.")
 
+        # 3 columnas, cada una con 6 controles
         col1, col2, col3 = st.columns(3)
 
         # ============================
-        # Columna 1 (2 selects + 4 num)
+        # Columna 1 (3 cajas + 3 sliders)
         # ============================
         with col1:
-            # SELECTS primero
+            # Cajas / selects arriba
             sex_es = st.selectbox("Sexo", list(SEX_OPTS.keys()))
             schoolsup_es = st.selectbox(
                 "Apoyo educativo del colegio",
                 list(YESNO_OPTS.keys()),
             )
-
-            # SLIDERS / NUMÉRICOS después
             age = st.number_input("Edad", min_value=15, max_value=25, value=17)
+
+            # Sliders abajo
             health = st.slider(
                 "Salud actual",
                 1, 5, 4,
@@ -192,7 +196,7 @@ with tab_ind:
             )
 
         # ============================
-        # Columna 2 (2 selects + 4 num)
+        # Columna 2 (3 cajas + 3 sliders)
         # ============================
         with col2:
             famsup_es = st.selectbox(
@@ -202,6 +206,10 @@ with tab_ind:
             activities_es = st.selectbox(
                 "Actividades extracurriculares",
                 list(YESNO_OPTS.keys()),
+            )
+            absences = st.number_input(
+                "Inasistencias",
+                min_value=0, max_value=100, value=0,
             )
 
             studytime = st.slider(
@@ -214,10 +222,6 @@ with tab_ind:
                 0, 4, 0,
                 help="Número de veces que repitió curso/asignatura",
             )
-            absences = st.number_input(
-                "Inasistencias",
-                min_value=0, max_value=100, value=0,
-            )
             goout = st.slider(
                 "Salir con amigos",
                 1, 5, 2,
@@ -225,7 +229,7 @@ with tab_ind:
             )
 
         # ============================
-        # Columna 3 (2 selects + 4 num)
+        # Columna 3 (2 cajas + 4 sliders)
         # ============================
         with col3:
             higher_es = st.selectbox(
@@ -341,7 +345,10 @@ with tab_ind:
 # ==============================
 with tab_batch:
     st.markdown('<div class="card">', unsafe_allow_html=True)
-    st.markdown("#### Predicción por lote (CSV)")
+    st.markdown(
+        '<h4 style="margin-bottom:0.2rem;">Predicción por lote (CSV)</h4>',
+        unsafe_allow_html=True,
+    )
 
     st.write(
         "Sube un archivo **CSV** que contenga al menos las siguientes columnas "
