@@ -12,13 +12,18 @@ st.set_page_config(
     layout="centered",
 )
 
-# Estilos (fondo CLARO + tarjetas + texto oscuro)
+# Estilos (fondo CLARO + tarjetas + texto negro y selects oscuros)
 st.markdown(
     """
 <style>
 /* Fondo general claro */
 main, .stApp {
     background: #f3f4f6;
+}
+
+/* Texto general negro (títulos, párrafos, labels, caption) */
+html, body, .stApp, .stMarkdown, p, li, span, label, h1, h2, h3, h4, h5, h6, .stCaption {
+    color: #111827 !important;
 }
 
 /* Tabs tipo pastilla */
@@ -38,24 +43,14 @@ main, .stApp {
     color: #f9fafb !important;
 }
 
-/* Tarjeta principal */
+/* Tarjeta principal (contenedor grande) */
 .card {
     background-color: #ffffff;
     border-radius: 1rem;
     padding: 1.5rem 1.75rem;
     box-shadow: 0 12px 30px rgba(15, 23, 42, 0.12);
-    border: 1px solid #d1d5db;
+    border: 1px solid rgba(37, 99, 235, 0.25);  /* borde azul suave */
     color: #111827;
-}
-
-/* Texto más oscuro dentro de la card */
-.card h1, .card h2, .card h3, .card h4, .card h5, .card h6,
-.card p, .card label {
-    color: #111827 !important;
-}
-
-h1, h2, h3 {
-    color: #111827 !important;
 }
 
 /* Tarjetas de métricas */
@@ -92,6 +87,31 @@ h1, h2, h3 {
 }
 .stButton>button:hover {
     filter: brightness(1.05);
+}
+
+/* ====== SELECTS: fondo oscuro + texto blanco ====== */
+
+/* Caja del valor seleccionado */
+.stSelectbox > div > div {
+    background-color: #111827 !important;
+    color: #f9fafb !important;
+    border-radius: 0.75rem !important;
+}
+
+/* Icono del select (flecha) */
+.stSelectbox svg {
+    color: #f9fafb !important;
+}
+
+/* Menú desplegable */
+div[data-baseweb="select"] ul {
+    background-color: #111827 !important;
+}
+div[data-baseweb="select"] li {
+    color: #f9fafb !important;
+}
+div[data-baseweb="select"] li:hover {
+    background-color: #1f2937 !important;
 }
 </style>
 """,
@@ -170,7 +190,6 @@ with tab_ind:
         # Columna 1 (3 cajas + 3 sliders)
         # ============================
         with col1:
-            # Cajas / selects arriba
             sex_es = st.selectbox("Sexo", list(SEX_OPTS.keys()))
             schoolsup_es = st.selectbox(
                 "Apoyo educativo del colegio",
@@ -178,7 +197,6 @@ with tab_ind:
             )
             age = st.number_input("Edad", min_value=15, max_value=25, value=17)
 
-            # Sliders abajo
             health = st.slider(
                 "Salud actual",
                 1, 5, 4,
