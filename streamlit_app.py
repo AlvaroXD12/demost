@@ -1,100 +1,133 @@
-# streamlit_app.py
 import streamlit as st
 import pandas as pd
 import joblib
-from pathlib import Path
+import json
+import os
 
-# 1. Cargar modelo
-MODEL_PATH = Path("artefactos") / "modelo_pima.pkl"
-modelo = joblib.load(MODEL_PATH)
+# ----------------- Cargar artefactos -----------------
+ART_DIR = os.path.join("artefactos", "v1")
 
-st.title("🤖 Predicción de Diabetes ")
-st.write("(Pima Dataset)")
+@st.cache_resource
+def load_pipeline():
+    # ajusta el nombre del archivo si es distinto
+    # por ejemplo: pipeline_RFS.joblib, pipeline_LRN.joblib, etc.
+    pipe_path = os.path.join(ART_DIR, "pipeline_RFS.joblib")
+    model = joblib.load(pipe_path)
+    return model
 
-# Tabs
-tab1, tab2, tab3 = st.tabs(["🧪 Predicción", "📊 Análisis del modelo", "📈 Gráficos interactivos"])
-# --- TAB 1: Entrada y predicción ---
-with tab1:
-    # 2. Ingreso de datos del paciente
-    st.subheader("Predicción de Diabetes")
-    st.write("Ingrese los valores clínicos para predecir si la paciente probablemente tiene diabetes.")
+@st.cache_resource
+def load_label_map():
+    with open(os.path.join(ART_DIR, "label_map.json"), "r", encoding="utf-8") as f:
+        return json.load(f)
+
+winner_pipe = load_pipeline()
+LABEL_MAP = load_label_map()
+REV_LABEL = {v: k for k, v in LABEL_MAP.items()}  # {0:"NO_ATRASO",1:"ATRASO"}
+
+BEST_THR = 0.5  # mismo que en tu decision_policy
+
+# ----------------- Interfaz -----------------
+st.title("Predicción de atraso escolar por hábitos")
+
+st.write("Modelo de clasificación para predecir si un estudiante está en **ATRASO (1)** "
+         "o **NO_ATRASO (0)** usando sus hábitos y contexto.")
+
+with st.form("form_atraso"):
+    st.subheader("Datos del estudiante")
+
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+        school = st.selectbox("school", ["GP", "MS"])
+        sex = st.selectbox("sex", ["F", "M"])
+        age = st.number_input("age", 15, 25, 17)
+        address = st.selectbox("address", ["U", "R"])
+        famsize = st.selectbox("famsize", ["LE3", "GT3"])
+        Pstatus = st.selectbox("Pstatus", ["T", "A"])
+
+    with col2:
+        Medu = st.slider("Medu (educ. madre)", 0, 4, 2)
+        Fedu = st.slider("Fedu (educ. padre)", 0, 4, 2)
+        Mjob = st.selectbox("Mjob", ["teacher", "health", "services", "at_home", "other"])
+        Fjob = st.selectbox("Fjob", ["teacher", "health", "services", "at_home", "other"])
+        reason = st.selectbox("reason", ["home", "reputation", "course", "other"])
+        guardian = st.selectbox("guardian", ["mother", "father", "other"])
+
+    with col3:
+        traveltime = st.slider("traveltime", 1, 4, 1)
+        studytime = st.slider("studytime", 1, 4, 2)
+        failures = st.slider("failures", 0, 4, 0)
+        schoolsup = st.selectbox("schoolsup", ["yes", "no"])
+        famsup = st.selectbox("famsup", ["yes", "no"])
+        paid = st.selectbox("paid", ["yes", "no"])
+
+    col4, col5, col6 = st.columns(3)
+    with col4:
+        activities = st.selectbox("activities", ["yes", "no"])
+        nursery = st.selectbox("nursery", ["yes", "no"])
+        higher = st.selectbox("higher", ["yes", "no"])
+        internet = st.selectbox("internet", ["yes", "no"])
+        romantic = st.selectbox("romantic", ["yes", "no"])
+
+    with col5:
+        famrel = st.slider("famrel", 1, 5, 4)
+        freetime = st.slider("freetime", 1, 5, 3)
+        goout = st.slider("goout", 1, 5, 2)
+
+    with col6:
+        Dalc = st.slider("Dalc (alcohol diario)", 1, 5, 1)
+        Walc = st.slider("Walc (alcohol fin de semana)", 1, 5, 1)
+        health = st.slider("health", 1, 5, 4)
+        absences = st.number_input("absences", 0, 100, 0)
+
+    submitted = st.form_submit_button("Predecir atraso")
+
+# ----------------- Predicción -----------------
+if submitted:
     data = {
-        'npreg': st.slider("Número de embarazos", 0, 20, 2),
-        'glu':   st.slider("Nivel de glucosa (mg/dl)", 50, 200, 100),
-        'bp':    st.slider("Presión arterial (mmHg)", 40, 130, 70),
-        'skin':  st.slider("Espesor del pliegue cutáneo (mm)", 7, 100, 20),
-        'bmi':   st.slider("IMC", 10.0, 50.0, 25.0),
-        'ped':   st.slider("Pedigree de diabetes", 0.0, 2.5, 0.5),
-        'age':   st.slider("Edad (años)", 18, 90, 35)
+        "school": school,
+        "sex": sex,
+        "age": age,
+        "address": address,
+        "famsize": famsize,
+        "Pstatus": Pstatus,
+        "Medu": Medu,
+        "Fedu": Fedu,
+        "Mjob": Mjob,
+        "Fjob": Fjob,
+        "reason": reason,
+        "guardian": guardian,
+        "traveltime": traveltime,
+        "studytime": studytime,
+        "failures": failures,
+        "schoolsup": schoolsup,
+        "famsup": famsup,
+        "paid": paid,
+        "activities": activities,
+        "nursery": nursery,
+        "higher": higher,
+        "internet": internet,
+        "romantic": romantic,
+        "famrel": famrel,
+        "freetime": freetime,
+        "goout": goout,
+        "Dalc": Dalc,
+        "Walc": Walc,
+        "health": health,
+        "absences": absences,
     }
 
-    # 3. Predicción
-    if st.button("Predecir"):
-        entrada = pd.DataFrame([data])
-        pred = modelo.predict(entrada)[0]
-        prob = modelo.predict_proba(entrada)[0][1]
-        resultado = "Diabética" if pred == 1 else "No diabética"
-        st.write(f"Resultado: **{resultado}**")
-        st.write(f"Probabilidad estimada: **{prob:.2f}**")
+    df = pd.DataFrame([data])
+    proba_atraso = winner_pipe.predict_proba(df)[0, 1]
+    pred_int = int(proba_atraso >= BEST_THR)
+    pred_label = REV_LABEL[pred_int]
 
-# --- TAB 2: Análisis del modelo ---
-with tab2:
-    # 4. Importancia de cada variable en la predicción
-    # Coeficientes del modelo
-    coef_df = pd.DataFrame({
-        'Variable': modelo.feature_names_in_,
-        'Peso': modelo.coef_[0]
-    }).sort_values(by='Peso', key=abs, ascending=False)
+    st.subheader("Resultado")
+    st.write(f"**Predicción:** {pred_label}")
+    st.write(f"**Probabilidad de ATRASO:** {proba_atraso:.3f}")
+    st.progress(float(proba_atraso))
 
-    st.subheader("Importancia de cada variable en la predicción")
-    st.bar_chart(coef_df.set_index("Variable"))
-
-    # 5. Correlación
-    import statsmodels.api as sm
-    import seaborn as sns
-    import matplotlib.pyplot as plt
-
-    df = sm.datasets.get_rdataset("Pima.tr", "MASS").data
-    df['type'] = df['type'].map({'Yes': 1, 'No': 0})
-
-    st.subheader("Correlación entre variables")
-    fig, ax = plt.subplots(figsize=(8, 5))
-    sns.heatmap(df.corr(), annot=True, cmap="coolwarm", ax=ax)
-    st.pyplot(fig)
-
-# --- TAB 3: Gráficos interactivos ---
-with tab3:
-    # 6. Gráficos interactivos
-    st.subheader("📈 Gráficos interactivos")
-
-    # Copiamos y preparamos los datos
-    df_plot = df.copy()
-    df_plot['type'] = df_plot['type'].map({1: 'Diabética', 0: 'No diabética'})
-
-    # Variables disponibles para graficar
-    variables = ['npreg', 'glu', 'bp', 'skin', 'bmi', 'ped', 'age']
-
-    # Selección de variables para los ejes
-    col1, col2 = st.columns(2)
-    x_var = col1.selectbox("Elige variable para eje X", variables, index=0)
-    y_var = col2.selectbox("Elige variable para eje Y", variables, index=1)
-
-    # Crear gráfico interactivo
-    import plotly.express as px
-    fig_plotly = px.scatter(
-        df_plot,
-        x=x_var,
-        y=y_var,
-        color="type",
-        title=f"{x_var} vs {y_var} según diagnóstico",
-        labels={"type": "Diagnóstico", x_var: x_var, y_var: y_var},
-        hover_data=['npreg', 'bmi', 'glu', 'age'],
-        width=900,
-        height=600
-    )
-
-    # Mostrar gráfico
-    st.plotly_chart(fig_plotly)
-
-    st.subheader("Distribución de Glucosa")
-    st.plotly_chart(px.histogram(df, x="glu", color="type", barmode="overlay", nbins=40, labels={"type": "Diabetes (1=Sí)"}), use_container_width=True)
+    if pred_int == 1:
+        st.warning("Este estudiante está en **riesgo de atraso** según el modelo.")
+    else:
+        st.success("Este estudiante **no** está en riesgo de atraso según el modelo.")
