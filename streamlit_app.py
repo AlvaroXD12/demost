@@ -5,7 +5,7 @@ import pandas as pd
 import numpy as np
 
 # ==============================
-#  Configuración general
+#  Configuración general (MODO OSCURO)
 # ==============================
 st.set_page_config(
     page_title="Clasificación — Aprobación estudiantil",
@@ -13,19 +13,18 @@ st.set_page_config(
     layout="centered",
 )
 
-# Estilos (fondo CLARO + tarjetas + texto negro y selects oscuros)
 st.markdown(
     """
 <style>
-/* Fondo general claro */
+/* Fondo general oscuro */
 main, .stApp {
-    background: #f3f4f6;
+    background: #020617;
 }
 
-/* Texto general negro */
+/* Texto general claro */
 html, body, .stApp, .stMarkdown, p, li, span, label,
 h1, h2, h3, h4, h5, h6, .stCaption {
-    color: #111827 !important;
+    color: #e5e7eb !important;
 }
 
 /* Tabs tipo pastilla */
@@ -35,33 +34,33 @@ h1, h2, h3, h4, h5, h6, .stCaption {
 .stTabs [data-baseweb="tab"] {
     border-radius: 999px;
     padding: 0.35rem 0.9rem;
-    background-color: #e5e7eb;
-    color: #374151;
+    background-color: #0f172a;
+    color: #cbd5f5;
     font-weight: 500;
-    border: none;
+    border: 1px solid #1e293b;
 }
 .stTabs [aria-selected="true"] {
-    background: #2563eb !important;
+    background: linear-gradient(90deg, #2563eb, #1d4ed8) !important;
     color: #f9fafb !important;
 }
 
-/* Tarjeta principal (contenedor grande) */
+/* Tarjeta principal */
 .card {
-    background-color: #ffffff;
+    background-color: #020617;
     border-radius: 1rem;
     padding: 1.5rem 1.75rem;
-    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.12);
-    border: 1px solid rgba(37, 99, 235, 0.25);
-    color: #111827;
+    box-shadow: 0 18px 40px rgba(15, 23, 42, 0.9);
+    border: 1px solid rgba(148, 163, 184, 0.6);
+    color: #e5e7eb;
 }
 
 /* Tarjetas de métricas */
 .metric-card {
     border-radius: 0.9rem;
     padding: 0.9rem 1.1rem;
-    background: #111827;
+    background: radial-gradient(circle at top left, #1e293b, #020617);
     color: #f9fafb;
-    border: 1px solid #1f2937;
+    border: 1px solid #334155;
 }
 .metric-label {
     font-size: 0.78rem;
@@ -75,39 +74,40 @@ h1, h2, h3, h4, h5, h6, .stCaption {
 }
 .metric-sub {
     font-size: 0.9rem;
-    color: #d1d5db;
+    color: #cbd5f5;
 }
 
 /* Botón principal */
 .stButton>button {
     border-radius: 999px;
-    background: linear-gradient(90deg, #2563eb, #3b82f6);
+    background: linear-gradient(90deg, #22c55e, #16a34a);
     border: none;
-    color: #f9fafb;
-    font-weight: 600;
-    padding: 0.45rem 1.5rem;
+    color: #0f172a;
+    font-weight: 700;
+    padding: 0.5rem 1.7rem;
 }
 .stButton>button:hover {
-    filter: brightness(1.05);
+    filter: brightness(1.1);
 }
 
-/* ====== SELECTS: fondo oscuro + texto blanco ====== */
+/* Selects oscuros */
 .stSelectbox > div > div {
-    background-color: #111827 !important;
-    color: #f9fafb !important;
+    background-color: #020617 !important;
+    color: #e5e7eb !important;
     border-radius: 0.75rem !important;
+    border: 1px solid #475569 !important;
 }
 .stSelectbox svg {
-    color: #f9fafb !important;
+    color: #e5e7eb !important;
 }
 div[data-baseweb="select"] ul {
-    background-color: #111827 !important;
+    background-color: #020617 !important;
 }
 div[data-baseweb="select"] li {
-    color: #f9fafb !important;
+    color: #e5e7eb !important;
 }
 div[data-baseweb="select"] li:hover {
-    background-color: #1f2937 !important;
+    background-color: #111827 !important;
 }
 </style>
 """,
@@ -117,23 +117,33 @@ div[data-baseweb="select"] li:hover {
 # ==============================
 #  Carga del modelo entrenado
 # ==============================
-ART_DIR = "artefactos"   # o carpeta donde subiste tu modelo .joblib
 
 @st.cache_resource
-def load_pipeline():
-    # Cambia el nombre si guardaste el modelo con otro nombre
-    model_path = os.path.join(ART_DIR, "modelo_atrasos.joblib")
-    return joblib.load(model_path)
+def load_pipeline_and_schema():
+    # Tu modelo .joblib (en la misma carpeta que este script)
+    model_path = "modelo_atrasos.joblib"
+    pipe = joblib.load(model_path)
 
-winner_pipe = load_pipeline()
+    # El primer paso del pipeline es "prep" (ColumnTransformer con num/cat)
+    prep = pipe.named_steps["prep"]
 
-# Mapa de etiquetas
-LABEL_MAP = {"FAIL": 0, "PASS": 1}
+    # Tomamos las columnas numéricas y categóricas tal como se usaron en entrenamiento
+    num_features = list(prep.transformers_[0][2])
+    cat_features = list(prep.transformers_[1][2])
+    expected_cols = list(num_features) + list(cat_features)
+
+    return pipe, expected_cols, num_features, cat_features
+
+
+winner_pipe, EXPECTED_COLS, NUM_FEATS, CAT_FEATS = load_pipeline_and_schema()
+
+# Mapa de etiquetas SOLO para mostrar (0/1 ya está en el modelo)
+LABEL_MAP = {"NO_ATRASO": 0, "ATRASO": 1}  # si quieres puedes cambiar a FAIL/PASS
 REV_LABEL = {v: k for k, v in LABEL_MAP.items()}
 
 BEST_THR = 0.5
 
-# Estas son las variables que pide el formulario / CSV
+# Variables que el usuario verá en el formulario/CSV
 FEATURES = [
     "sex", "age", "studytime", "failures", "absences",
     "schoolsup", "famsup", "activities", "higher",
@@ -154,35 +164,38 @@ YESNO_OPTS = {
 }
 
 # ==============================
+#  Helper: asegurar columnas
+# ==============================
+def ensure_expected_columns(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Se asegura de que el DataFrame tenga TODAS las columnas con las que
+    fue entrenado el modelo. Las que falten se rellenan con valores neutros.
+    """
+    for col in EXPECTED_COLS:
+        if col not in df.columns:
+            if col in NUM_FEATS:
+                df[col] = 0
+            else:
+                # categóricas: valor vacío → OneHotEncoder(handle_unknown="ignore")
+                # lo tratará como categoría desconocida (vector de ceros).
+                df[col] = ""
+    # ordenar exactamente como el modelo espera
+    return df[EXPECTED_COLS]
+
+
+# ==============================
 #  Header
 # ==============================
 st.markdown(
-    '<h3 style="font-weight:700; margin-bottom:0.15rem;">🤖 Clasificación — Aprobación estudiantil</h3>',
+    '<h3 style="font-weight:700; margin-bottom:0.15rem;">🎓 Clasificación — Atraso escolar</h3>',
     unsafe_allow_html=True,
 )
 st.caption(
-    "App de inferencia ML para predecir **PASS (1)** vs **FAIL (0)** "
+    "App de inferencia ML para predecir **ATRASO (1)** vs **NO_ATRASO (0)** "
     "a partir de hábitos y contexto del estudiante."
 )
 
 tab_ind, tab_batch = st.tabs(["🔹 Predicción individual", "📂 Predicción por lote (CSV)"])
-
-# ==============================
-#  Helper: completar columnas faltantes
-# ==============================
-def ensure_features(df: pd.DataFrame) -> pd.DataFrame:
-    """Asegura que el DataFrame tenga todas las columnas FEATURES."""
-    for col in FEATURES:
-        if col not in df.columns:
-            # si falta, rellenar con valor neutro
-            if col in ["age", "absences", "Medu", "Fedu"]:
-                df[col] = 0
-            elif col in ["studytime", "failures", "goout", "Dalc", "Walc",
-                         "famrel", "freetime", "health"]:
-                df[col] = 1
-            else:
-                df[col] = "no"
-    return df[FEATURES]
 
 # ==============================
 #  Predicción individual
@@ -190,12 +203,12 @@ def ensure_features(df: pd.DataFrame) -> pd.DataFrame:
 with tab_ind:
     st.markdown('<div class="card">', unsafe_allow_html=True)
 
-    with st.form("form_pass_fail"):
+    with st.form("form_atraso"):
         st.markdown(
             '<h4 style="margin-bottom:0.2rem;">Predicción individual</h4>',
             unsafe_allow_html=True,
         )
-        st.caption("Completa los datos del estudiante y presiona **Predecir aprobación**.")
+        st.caption("Completa los datos del estudiante y presiona **Predecir atraso**.")
 
         col1, col2, col3 = st.columns(3)
 
@@ -287,7 +300,7 @@ with tab_ind:
                 help="0 = ninguna, 1 = primaria, 2 = 5º-9º, 3 = secundaria, 4 = superior",
             )
 
-        submitted = st.form_submit_button("Predecir aprobación")
+        submitted = st.form_submit_button("Predecir atraso")
 
     if submitted:
         sex = SEX_OPTS[sex_es]
@@ -319,41 +332,43 @@ with tab_ind:
         }
 
         df = pd.DataFrame([data])
-        df = ensure_features(df)
 
-        # Probabilidad de PASS (clase 1)
-        proba_pass = float(winner_pipe.predict_proba(df)[0, 1])
+        # 🔴 AQUÍ ESTABA EL PROBLEMA:
+        # El modelo esperaba más columnas → ahora las completamos
+        df = ensure_expected_columns(df)
 
-        pred_int = int(proba_pass >= BEST_THR)
-        pred_label = REV_LABEL[pred_int]
+        # Probabilidad de ATRASO (clase 1)
+        proba_atraso = float(winner_pipe.predict_proba(df)[0, 1])
 
-        if proba_pass >= BEST_THR:
+        pred_int = int(proba_atraso >= BEST_THR)
+        pred_label = "ATRASO" if pred_int == 1 else "NO_ATRASO"
+
+        if proba_atraso >= BEST_THR:
             explicacion = (
-                f"Como {proba_pass:.3f} ≥ {BEST_THR:.2f}, "
-                f"el modelo clasifica como **PASS (1)**."
+                f"Como {proba_atraso:.3f} ≥ {BEST_THR:.2f}, "
+                f"el modelo clasifica como **ATRASO (1)**."
             )
         else:
             explicacion = (
-                f"Como {proba_pass:.3f} < {BEST_THR:.2f}, "
-                f"el modelo clasifica como **FAIL (0)**."
+                f"Como {proba_atraso:.3f} < {BEST_THR:.2f}, "
+                f"el modelo clasifica como **NO_ATRASO (0)**."
             )
 
         colA, colB = st.columns(2)
 
-        # Tarjetas + barra de probabilidad
         with colA:
             st.markdown('<div class="metric-card">', unsafe_allow_html=True)
-            st.markdown('<div class="metric-label">Probabilidad PASS = 1</div>', unsafe_allow_html=True)
+            st.markdown('<div class="metric-label">Probabilidad ATRASO = 1</div>', unsafe_allow_html=True)
             st.markdown(
-                f'<div class="metric-value">{proba_pass:.3f}</div>',
+                f'<div class="metric-value">{proba_atraso:.3f}</div>',
                 unsafe_allow_html=True,
             )
             st.markdown(
-                f'<div class="metric-sub">Equivalente a {proba_pass*100:.1f}% &nbsp;|&nbsp; Umbral: {BEST_THR:.2f}</div>',
+                f'<div class="metric-sub">Equivalente a {proba_atraso*100:.1f}% &nbsp;|&nbsp; Umbral: {BEST_THR:.2f}</div>',
                 unsafe_allow_html=True,
             )
             st.markdown('</div>', unsafe_allow_html=True)
-            st.progress(min(max(proba_pass, 0.0), 1.0))
+            st.progress(min(max(proba_atraso, 0.0), 1.0))
 
         with colB:
             st.markdown('<div class="metric-card">', unsafe_allow_html=True)
@@ -368,10 +383,10 @@ with tab_ind:
             )
             st.markdown('</div>', unsafe_allow_html=True)
 
-        # 🔹 Gráfico intuitivo PASS vs FAIL
+        # Gráfico intuitivo PASS vs FAIL
         st.markdown("#### Distribución de probabilidad")
         prob_df = pd.DataFrame(
-            {"Clase": ["FAIL", "PASS"], "Probabilidad": [1 - proba_pass, proba_pass]}
+            {"Clase": ["NO_ATRASO", "ATRASO"], "Probabilidad": [1 - proba_atraso, proba_atraso]}
         )
         st.bar_chart(prob_df.set_index("Clase"))
 
@@ -389,46 +404,49 @@ with tab_batch:
     )
 
     st.write(
-        "Sube un archivo **CSV** que contenga al menos las siguientes columnas "
-        f"(con estos nombres exactos): `{', '.join(FEATURES)}`."
+        "Sube un archivo **CSV** que contenga, al menos, las columnas "
+        f"`{', '.join(FEATURES)}`. El resto de columnas que el modelo usa se rellenan con valores por defecto."
     )
 
     file = st.file_uploader("Archivo CSV", type=["csv"])
 
     if file is not None:
         df_in = pd.read_csv(file)
-        faltantes = [c for c in FEATURES if c not in df_in.columns]
 
-        if faltantes:
-            st.error(
-                "Faltan columnas en el CSV:\n\n- " + "\n- ".join(faltantes)
-                + "\n\nAsegúrate de que los nombres coincidan exactamente."
+        faltantes_visibles = [c for c in FEATURES if c not in df_in.columns]
+        if faltantes_visibles:
+            st.warning(
+                "Faltan columnas recomendadas en el CSV:\n\n- "
+                + "\n- ".join(faltantes_visibles)
+                + "\n\nSe rellenarán las que falten con valores neutros."
             )
-        else:
-            df_in = ensure_features(df_in)
-            proba = winner_pipe.predict_proba(df_in)[:, 1]
-            pred_int = (proba >= BEST_THR).astype(int)
-            pred_label = [REV_LABEL[i] for i in pred_int]
 
-            df_out = df_in.copy()
-            df_out["proba_pass"] = proba
-            df_out["pred_int"] = pred_int
-            df_out["pred_label"] = pred_label
+        # Aseguramos TODAS las columnas esperadas por el modelo
+        df_in = ensure_expected_columns(df_in)
 
-            st.write("Vista previa de resultados:")
-            st.dataframe(df_out.head())
+        proba = winner_pipe.predict_proba(df_in)[:, 1]
+        pred_int = (proba >= BEST_THR).astype(int)
+        pred_label = np.where(pred_int == 1, "ATRASO", "NO_ATRASO")
 
-            # 🔹 Gráfico de distribución de clases
-            st.markdown("#### Distribución de predicciones (PASS / FAIL)")
-            counts = pd.Series(pred_label).value_counts().rename_axis("Clase").reset_index(name="Cantidad")
-            st.bar_chart(counts.set_index("Clase"))
+        df_out = df_in.copy()
+        df_out["proba_atraso"] = proba
+        df_out["pred_int"] = pred_int
+        df_out["pred_label"] = pred_label
 
-            csv_out = df_out.to_csv(index=False).encode("utf-8")
-            st.download_button(
-                "⬇️ Descargar resultados (CSV)",
-                data=csv_out,
-                file_name="predicciones_pass_fail.csv",
-                mime="text/csv",
-            )
+        st.write("Vista previa de resultados:")
+        st.dataframe(df_out.head())
+
+        # Distribución de predicciones
+        st.markdown("#### Distribución de predicciones (NO_ATRASO / ATRASO)")
+        counts = pd.Series(pred_label).value_counts().rename_axis("Clase").reset_index(name="Cantidad")
+        st.bar_chart(counts.set_index("Clase"))
+
+        csv_out = df_out.to_csv(index=False).encode("utf-8")
+        st.download_button(
+            "⬇️ Descargar resultados (CSV)",
+            data=csv_out,
+            file_name="predicciones_atraso.csv",
+            mime="text/csv",
+        )
 
     st.markdown('</div>', unsafe_allow_html=True)
