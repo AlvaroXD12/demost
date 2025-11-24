@@ -147,25 +147,58 @@ REV_LABEL = {v: k for k, v in LABEL_MAP.items()}
 
 BEST_THR = 0.5
 
-# Variables visibles para el usuario
-FEATURES = [
-    "sex", "age", "studytime", "failures", "absences",
-    "schoolsup", "famsup", "activities", "higher",
-    "internet", "goout", "Dalc", "Walc",
-    "famrel", "freetime", "health", "Medu", "Fedu",
-]
+# Para CSV usaremos TODAS las columnas de entrenamiento
+FEATURES = list(EXPECTED_COLS)
 
 # ==============================
 #  Mapas para mostrar en español
 # ==============================
-SEX_OPTS = {
-    "Femenino": "F",
-    "Masculino": "M",
+SEX_OPTS = {"Femenino": "F", "Masculino": "M"}
+YESNO_OPTS = {"Sí": "yes", "No": "no"}
+
+SCHOOL_OPTS = {
+    "Gabriel Pereira (GP)": "GP",
+    "Mousinho da Silveira (MS)": "MS",
 }
-YESNO_OPTS = {
-    "Sí": "yes",
-    "No": "no",
+
+ADDRESS_OPTS = {
+    "Urbano": "U",
+    "Rural": "R",
 }
+
+FAMSIZE_OPTS = {
+    "≤ 3 miembros": "LE3",
+    "> 3 miembros": "GT3",
+}
+
+PSTATUS_OPTS = {
+    "Padres juntos": "T",
+    "Padres separados": "A",
+}
+
+JOB_OPTS = {
+    "Profesor/a": "teacher",
+    "Salud": "health",
+    "Servicios": "services",
+    "En casa": "at_home",
+    "Otro": "other",
+}
+
+REASON_OPTS = {
+    "Cercanía a casa": "home",
+    "Buena reputación": "reputation",
+    "Programa / curso": "course",
+    "Otro": "other",
+}
+
+GUARD_OPTS = {
+    "Madre": "mother",
+    "Padre": "father",
+    "Otro tutor": "other",
+}
+
+TRAVELTIME_HELP = "1: <15min, 2: 15–30min, 3: 30–60min, 4: >60min"
+STUDYTIME_HELP = "1:<2h, 2:2–5h, 3:5–10h, 4:>10h"
 
 # ==============================
 #  Helper: asegurar columnas
@@ -193,7 +226,7 @@ st.markdown(
 )
 st.caption(
     "App de inferencia ML para predecir **ATRASO (1)** vs **NO_ATRASO (0)** "
-    "a partir de hábitos y contexto del estudiante."
+    "a partir de hábitos, contexto familiar y recursos del estudiante."
 )
 
 tab_ind, tab_batch = st.tabs(["🔹 Predicción individual", "📂 Predicción por lote (CSV)"])
@@ -206,135 +239,139 @@ with tab_ind:
 
     with st.form("form_atraso"):
         st.markdown(
-            '<h4 style="margin-bottom:0.2rem;">Predicción individual</h4>',
+            '<h4 style="margin-bottom:0.75rem;">Predicción individual</h4>',
             unsafe_allow_html=True,
         )
-        st.caption("Completa los datos del estudiante y presiona **Predecir atraso**.")
 
-        col1, col2, col3 = st.columns(3)
-
-        # Columna 1
-        with col1:
+        # === Sección: Datos personales y del centro ===
+        st.markdown("##### 1. Datos personales y del centro")
+        c1, c2, c3 = st.columns(3)
+        with c1:
+            school_es = st.selectbox("Colegio", list(SCHOOL_OPTS.keys()))
             sex_es = st.selectbox("Sexo", list(SEX_OPTS.keys()))
-            schoolsup_es = st.selectbox(
-                "Apoyo educativo del colegio",
-                list(YESNO_OPTS.keys()),
-            )
             age = st.number_input("Edad", min_value=15, max_value=25, value=17)
+        with c2:
+            address_es = st.selectbox("Zona de residencia", list(ADDRESS_OPTS.keys()))
+            famsize_es = st.selectbox("Tamaño de familia", list(FAMSIZE_OPTS.keys()))
+            Pstatus_es = st.selectbox("Estado de convivencia de los padres", list(PSTATUS_OPTS.keys()))
+        with c3:
+            traveltime = st.slider("Tiempo de viaje a la escuela", 1, 4, 1, help=TRAVELTIME_HELP)
+            studytime = st.slider("Horas de estudio semanal", 1, 4, 2, help=STUDYTIME_HELP)
+            failures = st.slider("Repeticiones previas", 0, 4, 0, help="Número de materias repetidas")
 
-            health = st.slider(
-                "Salud actual",
-                1, 5, 4,
-                help="1 = muy mala, 5 = muy buena",
-            )
-            Dalc = st.slider(
-                "Alcohol (días de semana)",
-                1, 5, 1,
-                help="1 = muy bajo, 5 = muy alto",
-            )
-            Walc = st.slider(
-                "Alcohol (fin de semana)",
-                1, 5, 1,
-                help="1 = muy bajo, 5 = muy alto",
-            )
+        st.markdown("---")
 
-        # Columna 2
-        with col2:
-            famsup_es = st.selectbox(
-                "Apoyo educativo de la familia",
-                list(YESNO_OPTS.keys()),
-            )
-            activities_es = st.selectbox(
-                "Actividades extracurriculares",
-                list(YESNO_OPTS.keys()),
-            )
-            absences = st.number_input(
-                "Inasistencias",
-                min_value=0, max_value=100, value=0,
-            )
+        # === Sección: Contexto familiar ===
+        st.markdown("##### 2. Contexto familiar")
+        c4, c5, c6 = st.columns(3)
+        with c4:
+            Medu = st.slider("Educación de la madre", 0, 4, 2,
+                             help="0: ninguna, 1: primaria, 2: 5º-9º, 3: secundaria, 4: superior")
+            Mjob_es = st.selectbox("Ocupación de la madre", list(JOB_OPTS.keys()))
+            famrel = st.slider("Relación familiar", 1, 5, 4, help="1 = muy mala, 5 = excelente")
+        with c5:
+            Fedu = st.slider("Educación del padre", 0, 4, 2,
+                             help="0: ninguna, 1: primaria, 2: 5º-9º, 3: secundaria, 4: superior")
+            Fjob_es = st.selectbox("Ocupación del padre", list(JOB_OPTS.keys()))
+            guardian_es = st.selectbox("Tutor principal", list(GUARD_OPTS.keys()))
+        with c6:
+            famsup_es = st.selectbox("Apoyo educativo de la familia", list(YESNO_OPTS.keys()))
+            nursery_es = st.selectbox("Fue a guardería de pequeño", list(YESNO_OPTS.keys()))
+            absences = st.number_input("Inasistencias totales", min_value=0, max_value=100, value=0)
 
-            studytime = st.slider(
-                "Horas de estudio semanal",
-                1, 4, 2,
-                help="1:<2h, 2:2-5h, 3:5-10h, 4:>10h",
-            )
-            failures = st.slider(
-                "Repeticiones previas",
-                0, 4, 0,
-                help="Número de veces que repitió curso/asignatura",
-            )
-            goout = st.slider(
-                "Salir con amigos",
-                1, 5, 2,
-                help="1 = casi nunca, 5 = muy frecuente",
-            )
+        st.markdown("---")
 
-        # Columna 3
-        with col3:
-            higher_es = st.selectbox(
-                "Desea estudios superiores",
-                list(YESNO_OPTS.keys()),
-            )
-            internet_es = st.selectbox(
-                "Acceso a Internet en casa",
-                list(YESNO_OPTS.keys()),
-            )
+        # === Sección: Apoyos y recursos ===
+        st.markdown("##### 3. Apoyos y recursos")
+        c7, c8, c9 = st.columns(3)
+        with c7:
+            schoolsup_es = st.selectbox("Apoyo educativo del colegio", list(YESNO_OPTS.keys()))
+            paid_es = st.selectbox("Clases extra pagadas (matemáticas)", list(YESNO_OPTS.keys()))
+            higher_es = st.selectbox("Desea estudios superiores", list(YESNO_OPTS.keys()))
+        with c8:
+            activities_es = st.selectbox("Actividades extracurriculares", list(YESNO_OPTS.keys()))
+            internet_es = st.selectbox("Acceso a Internet en casa", list(YESNO_OPTS.keys()))
+            romantic_es = st.selectbox("Tiene pareja actualmente", list(YESNO_OPTS.keys()))
+        with c9:
+            reason_es = st.selectbox("Motivo de elección de la escuela", list(REASON_OPTS.keys()))
+            health = st.slider("Salud actual", 1, 5, 4, help="1 = muy mala, 5 = muy buena")
+            freetime = st.slider("Tiempo libre después de clases", 1, 5, 3,
+                                 help="1 = muy poco, 5 = mucho")
 
-            famrel = st.slider(
-                "Relación con la familia",
-                1, 5, 4,
-                help="1 = muy mala, 5 = excelente",
-            )
-            freetime = st.slider(
-                "Tiempo libre después de clases",
-                1, 5, 3,
-                help="1 = muy poco, 5 = mucho",
-            )
-            Medu = st.slider(
-                "Educación de la madre",
-                0, 4, 2,
-                help="0 = ninguna, 1 = primaria, 2 = 5º-9º, 3 = secundaria, 4 = superior",
-            )
-            Fedu = st.slider(
-                "Educación del padre",
-                0, 4, 2,
-                help="0 = ninguna, 1 = primaria, 2 = 5º-9º, 3 = secundaria, 4 = superior",
-            )
+        st.markdown("---")
+
+        # === Sección: Hábitos y tiempo libre ===
+        st.markdown("##### 4. Hábitos y tiempo libre")
+        c10, c11 = st.columns(2)
+        with c10:
+            goout = st.slider("Salir con amigos", 1, 5, 2,
+                              help="1 = casi nunca, 5 = muy frecuente")
+            Dalc = st.slider("Consumo de alcohol entre semana", 1, 5, 1,
+                             help="1 = muy bajo, 5 = muy alto")
+        with c11:
+            Walc = st.slider("Consumo de alcohol fin de semana", 1, 5, 1,
+                             help="1 = muy bajo, 5 = muy alto")
 
         submitted = st.form_submit_button("Predecir atraso")
 
     if submitted:
+        # Mapear selecciones a códigos originales
+        school = SCHOOL_OPTS[school_es]
         sex = SEX_OPTS[sex_es]
+        address = ADDRESS_OPTS[address_es]
+        famsize = FAMSIZE_OPTS[famsize_es]
+        Pstatus = PSTATUS_OPTS[Pstatus_es]
+        Mjob = JOB_OPTS[Mjob_es]
+        Fjob = JOB_OPTS[Fjob_es]
+        reason = REASON_OPTS[reason_es]
+        guardian = GUARD_OPTS[guardian_es]
+
         schoolsup = YESNO_OPTS[schoolsup_es]
         famsup = YESNO_OPTS[famsup_es]
+        paid = YESNO_OPTS[paid_es]
         activities = YESNO_OPTS[activities_es]
+        nursery = YESNO_OPTS[nursery_es]
         higher = YESNO_OPTS[higher_es]
         internet = YESNO_OPTS[internet_es]
+        romantic = YESNO_OPTS[romantic_es]
 
+        # Construimos el registro con TODAS las variables del dataset original
         data = {
+            "school": school,
             "sex": sex,
             "age": age,
+            "address": address,
+            "famsize": famsize,
+            "Pstatus": Pstatus,
+            "Medu": Medu,
+            "Fedu": Fedu,
+            "Mjob": Mjob,
+            "Fjob": Fjob,
+            "reason": reason,
+            "guardian": guardian,
+            "traveltime": traveltime,
             "studytime": studytime,
             "failures": failures,
-            "absences": absences,
             "schoolsup": schoolsup,
             "famsup": famsup,
+            "paid": paid,
             "activities": activities,
+            "nursery": nursery,
             "higher": higher,
             "internet": internet,
+            "romantic": romantic,
+            "famrel": famrel,
+            "freetime": freetime,
             "goout": goout,
             "Dalc": Dalc,
             "Walc": Walc,
-            "famrel": famrel,
-            "freetime": freetime,
             "health": health,
-            "Medu": Medu,
-            "Fedu": Fedu,
+            "absences": absences,
         }
 
         df = pd.DataFrame([data])
 
-        # Completar columnas que el modelo espera
+        # Por seguridad, nos aseguramos de que tenga todas las columnas esperadas
         df = ensure_expected_columns(df)
 
         # Probabilidad de ATRASO (clase 1)
@@ -404,8 +441,18 @@ with tab_batch:
     )
 
     st.write(
-        "Sube un archivo **CSV** que contenga, al menos, las columnas "
-        f"`{', '.join(FEATURES)}`. El resto de columnas que el modelo usa se rellenan con valores por defecto."
+        "Sube un archivo **CSV** con las columnas del dataset original. "
+        "Idealmente debería contener, al menos:\n\n"
+        "`"
+        + ", ".join([
+            "school", "sex", "age", "address", "famsize", "Pstatus",
+            "Medu", "Fedu", "Mjob", "Fjob", "reason", "guardian",
+            "traveltime", "studytime", "failures", "schoolsup", "famsup",
+            "paid", "activities", "nursery", "higher", "internet", "romantic",
+            "famrel", "freetime", "goout", "Dalc", "Walc", "health", "absences"
+        ])
+        + "`\n\n"
+        "Cualquier columna faltante se rellenará con valores neutros."
     )
 
     file = st.file_uploader("Archivo CSV", type=["csv"])
@@ -413,12 +460,19 @@ with tab_batch:
     if file is not None:
         df_in = pd.read_csv(file)
 
-        faltantes_visibles = [c for c in FEATURES if c not in df_in.columns]
+        # Aviso si faltan columnas "humanas"
+        visibles = [
+            "school", "sex", "age", "address", "famsize", "Pstatus",
+            "Medu", "Fedu", "Mjob", "Fjob", "reason", "guardian",
+            "traveltime", "studytime", "failures", "schoolsup", "famsup",
+            "paid", "activities", "nursery", "higher", "internet", "romantic",
+            "famrel", "freetime", "goout", "Dalc", "Walc", "health", "absences"
+        ]
+        faltantes_visibles = [c for c in visibles if c not in df_in.columns]
         if faltantes_visibles:
             st.warning(
-                "Faltan columnas recomendadas en el CSV:\n\n- "
+                "Faltan columnas en el CSV (se completarán con valores por defecto):\n\n- "
                 + "\n- ".join(faltantes_visibles)
-                + "\n\nSe rellenarán las que falten con valores neutros."
             )
 
         # Aseguramos TODAS las columnas esperadas por el modelo
