@@ -122,7 +122,7 @@ ART_DIR = "artefactos"   # o carpeta donde subiste tu modelo .joblib
 @st.cache_resource
 def load_pipeline():
     # Cambia el nombre si guardaste el modelo con otro nombre
-    model_path = os.path.join(ART_DIR, "modelo_pass_fail.joblib")
+    model_path = os.path.join(ART_DIR, "modelo_atrasos.joblib")
     return joblib.load(model_path)
 
 winner_pipe = load_pipeline()
