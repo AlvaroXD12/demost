@@ -8,7 +8,7 @@ import numpy as np
 #  Configuración general (MODO OSCURO)
 # ==============================
 st.set_page_config(
-    page_title="Clasificación — Aprobación estudiantil",
+    page_title="Clasificación — Atraso escolar",
     page_icon="🎓",
     layout="centered",
 )
@@ -120,14 +120,18 @@ div[data-baseweb="select"] li:hover {
 
 @st.cache_resource
 def load_pipeline_and_schema():
-    # Tu modelo .joblib (en la misma carpeta que este script)
-    model_path = "modelo_atrasos.joblib"
+    # ruta absoluta a artefactos/modelo_atrasos.joblib
+    here = os.path.dirname(__file__)
+    model_path = os.path.join(here, "artefactos", "modelo_atrasos.joblib")
+    if not os.path.exists(model_path):
+        raise FileNotFoundError(f"No se encontró el modelo en: {model_path}")
+
     pipe = joblib.load(model_path)
 
     # El primer paso del pipeline es "prep" (ColumnTransformer con num/cat)
     prep = pipe.named_steps["prep"]
 
-    # Tomamos las columnas numéricas y categóricas tal como se usaron en entrenamiento
+    # Columnas numéricas y categóricas usadas en el entrenamiento
     num_features = list(prep.transformers_[0][2])
     cat_features = list(prep.transformers_[1][2])
     expected_cols = list(num_features) + list(cat_features)
@@ -137,13 +141,13 @@ def load_pipeline_and_schema():
 
 winner_pipe, EXPECTED_COLS, NUM_FEATS, CAT_FEATS = load_pipeline_and_schema()
 
-# Mapa de etiquetas SOLO para mostrar (0/1 ya está en el modelo)
-LABEL_MAP = {"NO_ATRASO": 0, "ATRASO": 1}  # si quieres puedes cambiar a FAIL/PASS
+# Mapa de etiquetas solo para mostrar
+LABEL_MAP = {"NO_ATRASO": 0, "ATRASO": 1}
 REV_LABEL = {v: k for k, v in LABEL_MAP.items()}
 
 BEST_THR = 0.5
 
-# Variables que el usuario verá en el formulario/CSV
+# Variables visibles para el usuario
 FEATURES = [
     "sex", "age", "studytime", "failures", "absences",
     "schoolsup", "famsup", "activities", "higher",
@@ -168,18 +172,15 @@ YESNO_OPTS = {
 # ==============================
 def ensure_expected_columns(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Se asegura de que el DataFrame tenga TODAS las columnas con las que
-    fue entrenado el modelo. Las que falten se rellenan con valores neutros.
+    Asegura que el DataFrame tenga TODAS las columnas usadas en el entrenamiento.
+    Las que falten se rellenan con valores neutros.
     """
     for col in EXPECTED_COLS:
         if col not in df.columns:
             if col in NUM_FEATS:
                 df[col] = 0
             else:
-                # categóricas: valor vacío → OneHotEncoder(handle_unknown="ignore")
-                # lo tratará como categoría desconocida (vector de ceros).
-                df[col] = ""
-    # ordenar exactamente como el modelo espera
+                df[col] = ""  # categóricas → unknown (OneHotEncoder las ignora)
     return df[EXPECTED_COLS]
 
 
@@ -333,8 +334,7 @@ with tab_ind:
 
         df = pd.DataFrame([data])
 
-        # 🔴 AQUÍ ESTABA EL PROBLEMA:
-        # El modelo esperaba más columnas → ahora las completamos
+        # Completar columnas que el modelo espera
         df = ensure_expected_columns(df)
 
         # Probabilidad de ATRASO (clase 1)
@@ -383,7 +383,7 @@ with tab_ind:
             )
             st.markdown('</div>', unsafe_allow_html=True)
 
-        # Gráfico intuitivo PASS vs FAIL
+        # Gráfico intuitivo NO_ATRASO vs ATRASO
         st.markdown("#### Distribución de probabilidad")
         prob_df = pd.DataFrame(
             {"Clase": ["NO_ATRASO", "ATRASO"], "Probabilidad": [1 - proba_atraso, proba_atraso]}
@@ -436,7 +436,7 @@ with tab_batch:
         st.write("Vista previa de resultados:")
         st.dataframe(df_out.head())
 
-        # Distribución de predicciones
+        # Gráfica de distribución de predicciones
         st.markdown("#### Distribución de predicciones (NO_ATRASO / ATRASO)")
         counts = pd.Series(pred_label).value_counts().rename_axis("Clase").reset_index(name="Cantidad")
         st.bar_chart(counts.set_index("Clase"))
