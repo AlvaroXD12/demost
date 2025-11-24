@@ -2,12 +2,13 @@ import streamlit as st
 import joblib
 import os
 import pandas as pd
+import numpy as np
 
 # ==============================
 #  Configuración general
 # ==============================
 st.set_page_config(
-    page_title="Clasificación — Atraso escolar",
+    page_title="Clasificación — Aprobación estudiantil",
     page_icon="🎓",
     layout="centered",
 )
@@ -50,7 +51,7 @@ h1, h2, h3, h4, h5, h6, .stCaption {
     border-radius: 1rem;
     padding: 1.5rem 1.75rem;
     box-shadow: 0 12px 30px rgba(15, 23, 42, 0.12);
-    border: 1px solid rgba(37, 99, 235, 0.25);  /* borde azul suave */
+    border: 1px solid rgba(37, 99, 235, 0.25);
     color: #111827;
 }
 
@@ -91,25 +92,19 @@ h1, h2, h3, h4, h5, h6, .stCaption {
 }
 
 /* ====== SELECTS: fondo oscuro + texto blanco ====== */
-
-/* Caja del valor seleccionado */
 .stSelectbox > div > div {
     background-color: #111827 !important;
     color: #f9fafb !important;
     border-radius: 0.75rem !important;
 }
-
-/* Icono del select (flecha) */
 .stSelectbox svg {
     color: #f9fafb !important;
 }
-
-/* Menú desplegable */
 div[data-baseweb="select"] ul {
     background-color: #111827 !important;
 }
 div[data-baseweb="select"] li {
-    color: #f9fafb !important;   /* texto blanco en las opciones */
+    color: #f9fafb !important;
 }
 div[data-baseweb="select"] li:hover {
     background-color: #1f2937 !important;
@@ -122,22 +117,23 @@ div[data-baseweb="select"] li:hover {
 # ==============================
 #  Carga del modelo entrenado
 # ==============================
-ART_DIR = "artefactos"   # carpeta donde subiste el .joblib
+ART_DIR = "artefactos"   # o carpeta donde subiste tu modelo .joblib
 
 @st.cache_resource
 def load_pipeline():
-    model_path = os.path.join(ART_DIR, "modelo_atrasos.joblib")
+    # Cambia el nombre si guardaste el modelo con otro nombre
+    model_path = os.path.join(ART_DIR, "modelo_pass_fail.joblib")
     return joblib.load(model_path)
 
 winner_pipe = load_pipeline()
 
 # Mapa de etiquetas
-LABEL_MAP = {"NO_ATRASO": 0, "ATRASO": 1}
+LABEL_MAP = {"FAIL": 0, "PASS": 1}
 REV_LABEL = {v: k for k, v in LABEL_MAP.items()}
 
 BEST_THR = 0.5
 
-# Variables usadas por el modelo (para el CSV)
+# Estas son las variables que pide el formulario / CSV
 FEATURES = [
     "sex", "age", "studytime", "failures", "absences",
     "schoolsup", "famsup", "activities", "higher",
@@ -161,15 +157,32 @@ YESNO_OPTS = {
 #  Header
 # ==============================
 st.markdown(
-    '<h3 style="font-weight:700; margin-bottom:0.15rem;">🤖 Clasificación — Atraso escolar</h3>',
+    '<h3 style="font-weight:700; margin-bottom:0.15rem;">🤖 Clasificación — Aprobación estudiantil</h3>',
     unsafe_allow_html=True,
 )
 st.caption(
-    "App de inferencia ML para predecir **ATRASO (1)** vs **NO_ATRASO (0)** "
+    "App de inferencia ML para predecir **PASS (1)** vs **FAIL (0)** "
     "a partir de hábitos y contexto del estudiante."
 )
 
 tab_ind, tab_batch = st.tabs(["🔹 Predicción individual", "📂 Predicción por lote (CSV)"])
+
+# ==============================
+#  Helper: completar columnas faltantes
+# ==============================
+def ensure_features(df: pd.DataFrame) -> pd.DataFrame:
+    """Asegura que el DataFrame tenga todas las columnas FEATURES."""
+    for col in FEATURES:
+        if col not in df.columns:
+            # si falta, rellenar con valor neutro
+            if col in ["age", "absences", "Medu", "Fedu"]:
+                df[col] = 0
+            elif col in ["studytime", "failures", "goout", "Dalc", "Walc",
+                         "famrel", "freetime", "health"]:
+                df[col] = 1
+            else:
+                df[col] = "no"
+    return df[FEATURES]
 
 # ==============================
 #  Predicción individual
@@ -177,14 +190,13 @@ tab_ind, tab_batch = st.tabs(["🔹 Predicción individual", "📂 Predicción p
 with tab_ind:
     st.markdown('<div class="card">', unsafe_allow_html=True)
 
-    with st.form("form_atraso"):
+    with st.form("form_pass_fail"):
         st.markdown(
             '<h4 style="margin-bottom:0.2rem;">Predicción individual</h4>',
             unsafe_allow_html=True,
         )
-        st.caption("Completa los datos del estudiante y presiona **Predecir atraso**.")
+        st.caption("Completa los datos del estudiante y presiona **Predecir aprobación**.")
 
-        # 3 columnas, cada una con 6 controles
         col1, col2, col3 = st.columns(3)
 
         # Columna 1
@@ -275,10 +287,9 @@ with tab_ind:
                 help="0 = ninguna, 1 = primaria, 2 = 5º-9º, 3 = secundaria, 4 = superior",
             )
 
-        submitted = st.form_submit_button("Predecir atraso")
+        submitted = st.form_submit_button("Predecir aprobación")
 
     if submitted:
-        # Mapear selecciones en español a códigos originales
         sex = SEX_OPTS[sex_es]
         schoolsup = YESNO_OPTS[schoolsup_es]
         famsup = YESNO_OPTS[famsup_es]
@@ -286,7 +297,6 @@ with tab_ind:
         higher = YESNO_OPTS[higher_es]
         internet = YESNO_OPTS[internet_es]
 
-        # Construir diccionario con las features que usa el modelo
         data = {
             "sex": sex,
             "age": age,
@@ -309,41 +319,41 @@ with tab_ind:
         }
 
         df = pd.DataFrame([data])
+        df = ensure_features(df)
 
-        # Probabilidad de ATRASO (clase 1)
-        proba_atraso = float(winner_pipe.predict_proba(df)[0, 1])
+        # Probabilidad de PASS (clase 1)
+        proba_pass = float(winner_pipe.predict_proba(df)[0, 1])
 
-        # Regla con umbral: alta prob → ATRASO (1)
-        pred_int = int(proba_atraso >= BEST_THR)
+        pred_int = int(proba_pass >= BEST_THR)
         pred_label = REV_LABEL[pred_int]
 
-        if proba_atraso >= BEST_THR:
+        if proba_pass >= BEST_THR:
             explicacion = (
-                f"Como {proba_atraso:.3f} ≥ {BEST_THR:.2f}, "
-                f"el modelo clasifica como **ATRASO (1)**."
+                f"Como {proba_pass:.3f} ≥ {BEST_THR:.2f}, "
+                f"el modelo clasifica como **PASS (1)**."
             )
         else:
             explicacion = (
-                f"Como {proba_atraso:.3f} < {BEST_THR:.2f}, "
-                f"el modelo clasifica como **NO_ATRASO (0)**."
+                f"Como {proba_pass:.3f} < {BEST_THR:.2f}, "
+                f"el modelo clasifica como **FAIL (0)**."
             )
 
-        # Métricas tipo “tarjeta”
         colA, colB = st.columns(2)
+
+        # Tarjetas + barra de probabilidad
         with colA:
             st.markdown('<div class="metric-card">', unsafe_allow_html=True)
-            st.markdown('<div class="metric-label">Probabilidad ATRASO = 1</div>', unsafe_allow_html=True)
+            st.markdown('<div class="metric-label">Probabilidad PASS = 1</div>', unsafe_allow_html=True)
             st.markdown(
-                f'<div class="metric-value">{proba_atraso:.3f}</div>',
+                f'<div class="metric-value">{proba_pass:.3f}</div>',
                 unsafe_allow_html=True,
             )
             st.markdown(
-                f'<div class="metric-sub">Equivalente a {proba_atraso*100:.1f}% &nbsp;|&nbsp; Umbral: {BEST_THR:.2f}</div>',
+                f'<div class="metric-sub">Equivalente a {proba_pass*100:.1f}% &nbsp;|&nbsp; Umbral: {BEST_THR:.2f}</div>',
                 unsafe_allow_html=True,
             )
             st.markdown('</div>', unsafe_allow_html=True)
-
-            st.progress(min(max(proba_atraso, 0.0), 1.0))
+            st.progress(min(max(proba_pass, 0.0), 1.0))
 
         with colB:
             st.markdown('<div class="metric-card">', unsafe_allow_html=True)
@@ -358,7 +368,14 @@ with tab_ind:
             )
             st.markdown('</div>', unsafe_allow_html=True)
 
-    st.markdown('</div>', unsafe_allow_html=True)  # cierre .card
+        # 🔹 Gráfico intuitivo PASS vs FAIL
+        st.markdown("#### Distribución de probabilidad")
+        prob_df = pd.DataFrame(
+            {"Clase": ["FAIL", "PASS"], "Probabilidad": [1 - proba_pass, proba_pass]}
+        )
+        st.bar_chart(prob_df.set_index("Clase"))
+
+    st.markdown('</div>', unsafe_allow_html=True)
 
 # ==============================
 #  Predicción por lote (CSV)
@@ -380,32 +397,38 @@ with tab_batch:
 
     if file is not None:
         df_in = pd.read_csv(file)
-
         faltantes = [c for c in FEATURES if c not in df_in.columns]
+
         if faltantes:
             st.error(
                 "Faltan columnas en el CSV:\n\n- " + "\n- ".join(faltantes)
                 + "\n\nAsegúrate de que los nombres coincidan exactamente."
             )
         else:
-            proba = winner_pipe.predict_proba(df_in[FEATURES])[:, 1]
+            df_in = ensure_features(df_in)
+            proba = winner_pipe.predict_proba(df_in)[:, 1]
             pred_int = (proba >= BEST_THR).astype(int)
             pred_label = [REV_LABEL[i] for i in pred_int]
 
             df_out = df_in.copy()
-            df_out["proba_atraso"] = proba
+            df_out["proba_pass"] = proba
             df_out["pred_int"] = pred_int
             df_out["pred_label"] = pred_label
 
             st.write("Vista previa de resultados:")
             st.dataframe(df_out.head())
 
+            # 🔹 Gráfico de distribución de clases
+            st.markdown("#### Distribución de predicciones (PASS / FAIL)")
+            counts = pd.Series(pred_label).value_counts().rename_axis("Clase").reset_index(name="Cantidad")
+            st.bar_chart(counts.set_index("Clase"))
+
             csv_out = df_out.to_csv(index=False).encode("utf-8")
             st.download_button(
                 "⬇️ Descargar resultados (CSV)",
                 data=csv_out,
-                file_name="predicciones_atraso.csv",
+                file_name="predicciones_pass_fail.csv",
                 mime="text/csv",
             )
 
-    st.markdown('</div>', unsafe_allow_html=True)  # cierre .card
+    st.markdown('</div>', unsafe_allow_html=True)
