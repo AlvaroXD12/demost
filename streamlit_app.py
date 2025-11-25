@@ -212,8 +212,7 @@ tab_ind, tab_batch = st.tabs(["🔹 Predicción individual", "📂 Predicción p
 #  Predicción individual
 # ==============================
 with tab_ind:
-    st.markdown('<div class="card">', unsafe_allow_html=True)
-
+    
     with st.form("form_pass_fail"):
         st.markdown(
             '<h4 style="margin-bottom:0.75rem;">Predicción individual</h4>',
@@ -332,7 +331,6 @@ with tab_ind:
         colA, colB = st.columns(2)
 
         with colA:
-            st.markdown('<div class="metric-card">', unsafe_allow_html=True)
             st.markdown('<div class="metric-label">Probabilidad PASS = 1</div>', unsafe_allow_html=True)
             st.markdown(
                 f'<div class="metric-value">{proba_pass:.3f}</div>',
@@ -346,7 +344,6 @@ with tab_ind:
             st.progress(min(max(proba_pass, 0.0), 1.0))
 
         with colB:
-            st.markdown('<div class="metric-card">', unsafe_allow_html=True)
             st.markdown('<div class="metric-label">Decisión del modelo</div>', unsafe_allow_html=True)
             st.markdown(
                 f'<div class="metric-value">{pred_label} ({pred_int})</div>',
