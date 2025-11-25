@@ -239,7 +239,6 @@ tab_ind, tab_batch = st.tabs(["🔹 Predicción individual", "📂 Predicción p
 #  Predicción individual
 # ==============================
 with tab_ind:
-    st.markdown('<div class="card">', unsafe_allow_html=True)
 
     with st.form("form_pass_fail"):
         st.markdown(
