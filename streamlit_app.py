@@ -399,7 +399,7 @@ with tab_ind:
         colA, colB = st.columns(2)
 
         with colA:
-            st.markdown('<div class="metric-card">', unsafe_allow_html=True)
+            
             st.markdown('<div class="metric-label">Probabilidad PASS = 1</div>', unsafe_allow_html=True)
             st.markdown(
                 f'<div class="metric-value">{proba_pass:.3f}</div>',
@@ -438,7 +438,6 @@ with tab_ind:
 #  Predicción por lote (CSV)
 # ==============================
 with tab_batch:
-    st.markdown('<div class="card">', unsafe_allow_html=True)
 
     st.markdown(
         '<h4 style="margin-bottom:0.2rem;">Predicción por lote (CSV)</h4>',
