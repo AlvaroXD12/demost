@@ -43,7 +43,7 @@ main, .stApp {
     background: var(--bg-page);
 }
 .block-container {
-    padding-top: 1.8rem;
+    padding-top: 1.2rem;
     padding-bottom: 2rem;
     max-width: 1200px !important;
 }
@@ -55,16 +55,16 @@ h1, h2, h3, h4, h5, h6, .stCaption {
     font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
-/* Hero banner */
+/* Hero banner (solo una franja, sin columna aparte) */
 .hero-banner {
-    margin-top: 0.6rem;
-    margin-bottom: 1.4rem;
+    margin-top: 0.2rem;
+    margin-bottom: 1.0rem;
     background:
         radial-gradient(circle at 0% 0%, #93c5fd 0, transparent 55%),
         radial-gradient(circle at 100% 0%, #fde68a 0, transparent 55%),
         linear-gradient(90deg, #003c71, #2563eb);
     border-radius: 1.25rem;
-    padding: 1.1rem 1.5rem;
+    padding: 1.0rem 1.5rem;
     color: #f9fafb;
     display: flex;
     align-items: center;
@@ -74,7 +74,7 @@ h1, h2, h3, h4, h5, h6, .stCaption {
 .hero-left {
     display: flex;
     gap: 0.9rem;
-    align-items: flex-start;
+    align-items: center;
 }
 .hero-icon {
     width: 52px;
@@ -97,9 +97,9 @@ h1, h2, h3, h4, h5, h6, .stCaption {
 
 /* Tabs como botones grandes de ancho completo */
 .stTabs {
-    margin-top: 0.4rem;
+    margin-top: 0.1rem;
 }
-.stTabs [data-baseweb="tab-list"] {
+.stTabs [role="tablist"] {
     display: flex;
     width: 100%;
     background-color: #e5e7eb;
@@ -107,6 +107,10 @@ h1, h2, h3, h4, h5, h6, .stCaption {
     border-radius: 999px;
     box-shadow: 0 10px 22px rgba(15, 23, 42, 0.12);
     gap: 0.25rem;
+}
+/* Ocultar el resaltado rojo interno de Streamlit */
+.stTabs [role="tablist"] > div:last-child {
+    display: none !important;
 }
 .stTabs [data-baseweb="tab"] {
     flex: 1;
@@ -133,17 +137,17 @@ h1, h2, h3, h4, h5, h6, .stCaption {
 .card {
     background-color: var(--bg-card);
     border-radius: 1.15rem;
-    padding: 1.6rem 1.7rem;
+    padding: 1.2rem 1.4rem 1.6rem 1.4rem;
     box-shadow: 0 18px 35px rgba(15, 23, 42, 0.07);
     border: 1px solid var(--border-subtle);
-    margin-top: 1.2rem;
+    margin-top: 0.9rem;
 }
 .subcard {
     background-color: #ffffff;
     border-radius: 0.9rem;
     padding: 1.0rem 1.1rem 1.1rem 1.1rem;
     border: 1px solid #e5e7eb;
-    margin-top: 0.9rem;
+    margin-top: 0rem;  /* alineado arriba con ficha */
 }
 
 /* Secciones */
@@ -244,7 +248,7 @@ div[data-baseweb="select"] li:hover {
 hr {
     border: none;
     border-top: 1px dashed #e5e7eb;
-    margin: 1.1rem 0 1.0rem 0;
+    margin: 1.0rem 0 0.9rem 0;
 }
 
 /* DataFrame claro */
@@ -299,7 +303,7 @@ div[data-testid="stTooltipContent"] {
 )
 
 # ==============================
-#  Carga del modelo (LÓGICA IGUAL)
+#  Carga del modelo (lógica intacta)
 # ==============================
 @st.cache_resource
 def load_pipeline_and_schema():
@@ -353,26 +357,10 @@ def ensure_expected_columns(df: pd.DataFrame) -> pd.DataFrame:
     return df[EXPECTED_COLS]
 
 # ==============================
-#  HEADER
+#  HEADER moderno
 # ==============================
-here = os.path.dirname(__file__)
-logo_path = os.path.join(here, "assets", "logo_union_nana.png")
-
-hero_cols = st.columns([1, 4])
-with hero_cols[0]:
-    if os.path.exists(logo_path):
-        st.image(logo_path, width=80)
-    else:
-        st.markdown(
-            "<div style='font-size:2.4rem;color:#ffffff;"
-            "background:#003c71;border-radius:999px;width:64px;height:64px;"
-            "display:flex;align-items:center;justify-content:center;'>A</div>",
-            unsafe_allow_html=True,
-        )
-
-with hero_cols[1]:
-    st.markdown(
-        """
+st.markdown(
+    """
 <div class="hero-banner">
   <div class="hero-left">
     <div class="hero-icon">🎓</div>
@@ -389,8 +377,8 @@ with hero_cols[1]:
   </div>
 </div>
 """,
-        unsafe_allow_html=True,
-    )
+    unsafe_allow_html=True,
+)
 
 st.caption(
     "Esta herramienta **no reemplaza** la evaluación integral del estudiante; "
@@ -398,7 +386,6 @@ st.caption(
 )
 
 tab_ind, tab_batch = st.tabs(["🧑‍🎓 Predicción individual", "📂 Predicción por lote (CSV)"])
-
 st.caption("Selecciona el modo de uso: analizar un solo estudiante o cargar un archivo completo de alumnos.")
 
 # ==============================
@@ -407,6 +394,7 @@ st.caption("Selecciona el modo de uso: analizar un solo estudiante o cargar un a
 with tab_ind:
     st.markdown('<div class="card">', unsafe_allow_html=True)
 
+    # fila principal: formulario izquierda + guía derecha
     col_form, col_side = st.columns([3, 2])
 
     with col_form:
@@ -479,7 +467,6 @@ with tab_ind:
                     help="Nivel de tiempo libre luego de clases (1 = muy poco, 5 = mucho)."
                 )
 
-            # Repeticiones arriba, inasistencias y salud abajo
             failures = st.slider(
                 "Repeticiones previas",
                 0, 4, 0,
