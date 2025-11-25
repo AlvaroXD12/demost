@@ -32,12 +32,18 @@ st.markdown(
     --text-muted: #6b7280;
 }
 
+/* Header oscuro de Streamlit -> claro e integrado */
+header[data-testid="stHeader"] {
+    background-color: var(--bg-page) !important;
+    box-shadow: none !important;
+}
+
 /* Fondo y contenedor */
 main, .stApp {
     background: var(--bg-page);
 }
 .block-container {
-    padding-top: 2.2rem;
+    padding-top: 1.8rem;
     padding-bottom: 2rem;
     max-width: 1200px !important;
 }
@@ -51,7 +57,8 @@ h1, h2, h3, h4, h5, h6, .stCaption {
 
 /* Hero banner */
 .hero-banner {
-    margin-bottom: 1.6rem;
+    margin-top: 0.6rem;
+    margin-bottom: 1.4rem;
     background:
         radial-gradient(circle at 0% 0%, #93c5fd 0, transparent 55%),
         radial-gradient(circle at 100% 0%, #fde68a 0, transparent 55%),
@@ -88,25 +95,38 @@ h1, h2, h3, h4, h5, h6, .stCaption {
     opacity: 0.9;
 }
 
-/* Tabs */
+/* Tabs como botones grandes de ancho completo */
 .stTabs {
-    margin-top: 0.8rem;
+    margin-top: 0.4rem;
 }
 .stTabs [data-baseweb="tab-list"] {
-    gap: 0.4rem;
+    display: flex;
+    width: 100%;
+    background-color: #e5e7eb;
+    padding: 0.25rem;
+    border-radius: 999px;
+    box-shadow: 0 10px 22px rgba(15, 23, 42, 0.12);
+    gap: 0.25rem;
 }
 .stTabs [data-baseweb="tab"] {
+    flex: 1;
+    justify-content: center;
     border-radius: 999px;
-    padding: 0.5rem 1.25rem;
-    background-color: #e5e7eb;
+    padding: 0.6rem 1.25rem;
+    background-color: transparent;
     color: #374151;
     font-weight: 500;
-    border: 1px solid #d1d5db;
+    border: none;
+    box-shadow: none !important;
+}
+.stTabs [data-baseweb="tab"]:hover {
+    background-color: #d1d5db;
 }
 .stTabs [aria-selected="true"] {
-    background: linear-gradient(90deg, var(--primary), #1d4ed8) !important;
-    color: #f9fafb !important;
-    border-color: transparent !important;
+    background: #ffffff !important;
+    color: var(--primary) !important;
+    box-shadow: 0 10px 24px rgba(37, 99, 235, 0.35) !important;
+    border: none !important;
 }
 
 /* Tarjetas */
@@ -199,11 +219,11 @@ div[data-baseweb="select"] li:hover {
     background-color: #eff6ff !important;
 }
 
-/* Number input */
-.stNumberInput > div {
+/* Number input (forzar fondo claro) */
+.stNumberInput div {
     background: #ffffff !important;
     border-radius: 0.75rem !important;
-    border: 1px solid #d1d5db !important;
+    border-color: #d1d5db !important;
 }
 .stNumberInput input {
     background: #ffffff !important;
@@ -213,12 +233,6 @@ div[data-baseweb="select"] li:hover {
     background: #eff6ff !important;
     border-radius: 0.75rem !important;
     border: none !important;
-}
-
-/* Inputs en general */
-input[type="number"], input[type="text"] {
-    background-color: #ffffff !important;
-    color: var(--text-main) !important;
 }
 
 /* Sliders */
@@ -253,7 +267,7 @@ hr {
     background-color: #ffffff !important;
 }
 
-/* Tooltips (icono de ayuda) */
+/* Tooltips */
 div[data-testid="stTooltipContent"] {
     background-color: #ffffff !important;
     color: var(--text-main) !important;
@@ -285,7 +299,7 @@ div[data-testid="stTooltipContent"] {
 )
 
 # ==============================
-#  Carga del modelo (LOGIC NO TOUCH)
+#  Carga del modelo (LÓGICA IGUAL)
 # ==============================
 @st.cache_resource
 def load_pipeline_and_schema():
@@ -317,26 +331,18 @@ SELECTED_FEATURES = [
     "higher", "internet",
     "famrel", "freetime", "health",
 ]
-
 VISIBLE_COLS = list(SELECTED_FEATURES)
 
-# ==============================
-#  Mapas en español
-# ==============================
 SEX_OPTS = {"Femenino": "F", "Masculino": "M"}
 YESNO_OPTS = {"Sí": "yes", "No": "no"}
-
 ADDRESS_OPTS = {"Urbano": "U", "Rural": "R"}
 FAMSIZE_OPTS = {"≤ 3 miembros": "LE3", "> 3 miembros": "GT3"}
 
 TRAVELTIME_HELP = "1: <15min, 2: 15–30min, 3: 30–60min, 4: >60min"
 STUDYTIME_HELP = "1:<2h, 2:2–5h, 3:5–10h, 4:>10h"
 
-DEFAULT_TRAVELTIME = 1  # tiempo de viaje fijo (<15 min)
+DEFAULT_TRAVELTIME = 1  # fijo
 
-# ==============================
-#  Helper columnas
-# ==============================
 def ensure_expected_columns(df: pd.DataFrame) -> pd.DataFrame:
     for col in EXPECTED_COLS:
         if col not in df.columns:
@@ -393,19 +399,20 @@ st.caption(
 
 tab_ind, tab_batch = st.tabs(["🧑‍🎓 Predicción individual", "📂 Predicción por lote (CSV)"])
 
+st.caption("Selecciona el modo de uso: analizar un solo estudiante o cargar un archivo completo de alumnos.")
+
 # ==============================
 #  PREDICCIÓN INDIVIDUAL
 # ==============================
 with tab_ind:
     st.markdown('<div class="card">', unsafe_allow_html=True)
 
-    # Layout nuevo: columna izquierda = formulario, derecha = resumen / guía
     col_form, col_side = st.columns([3, 2])
 
     with col_form:
         with st.form("form_pass_fail"):
 
-            # ---- Bloque 1: Ficha básica del estudiante ----
+            # ---- 1. Ficha del estudiante ----
             st.markdown(
                 '<div class="section-title">1. Ficha del estudiante 🧍‍♀️</div>',
                 unsafe_allow_html=True,
@@ -416,77 +423,94 @@ with tab_ind:
             )
             sf1, sf2 = st.columns(2)
             with sf1:
-                sex_es = st.selectbox("Sexo", list(SEX_OPTS.keys()))
-                age = st.number_input("Edad", min_value=10, max_value=25, value=16)
+                sex_es = st.selectbox(
+                    "Sexo",
+                    list(SEX_OPTS.keys()),
+                    help="Sexo biológico del/la estudiante."
+                )
+                age = st.number_input(
+                    "Edad",
+                    min_value=10,
+                    max_value=25,
+                    value=16,
+                    help="Edad actual del/la estudiante en años."
+                )
             with sf2:
-                address_es = st.selectbox("Zona de residencia", list(ADDRESS_OPTS.keys()))
-                famsize_es = st.selectbox("Tamaño de familia", list(FAMSIZE_OPTS.keys()))
+                address_es = st.selectbox(
+                    "Zona de residencia",
+                    list(ADDRESS_OPTS.keys()),
+                    help="Lugar donde vive la familia: urbano o rural."
+                )
+                famsize_es = st.selectbox(
+                    "Tamaño de familia",
+                    list(FAMSIZE_OPTS.keys()),
+                    help="Cantidad de miembros que viven en el hogar."
+                )
 
             st.markdown("<hr/>", unsafe_allow_html=True)
 
-            # ---- Bloque 2: Entorno familiar y bienestar ----
+            # ---- 2. Entorno familiar y bienestar ----
             st.markdown(
                 '<div class="section-title">2. Entorno familiar y bienestar 🏠💬</div>',
                 unsafe_allow_html=True,
             )
 
-            with st.container():
-                c_ed, c_rel = st.columns(2)
-                with c_ed:
-                    Medu = st.slider(
-                        "Educación de la madre",
-                        0, 4, 2,
-                        help="0: ninguna, 1: primaria, 2: 5º-9º, 3: secundaria, 4: superior",
-                    )
-                    Fedu = st.slider(
-                        "Educación del padre",
-                        0, 4, 2,
-                        help="0: ninguna, 1: primaria, 2: 5º-9º, 3: secundaria, 4: superior",
-                    )
-                with c_rel:
-                    famrel = st.slider(
-                        "Relación familiar",
-                        1, 5, 4,
-                        help="1 = muy mala, 5 = excelente",
-                    )
-                    freetime = st.slider(
-                        "Tiempo libre después de clases",
-                        1, 5, 3,
-                        help="1 = muy poco, 5 = mucho",
-                    )
+            c1, c2 = st.columns(2)
+            with c1:
+                Medu = st.slider(
+                    "Educación de la madre",
+                    0, 4, 2,
+                    help="0: ninguna, 1: primaria, 2: 5º-9º, 3: secundaria, 4: superior"
+                )
+                Fedu = st.slider(
+                    "Educación del padre",
+                    0, 4, 2,
+                    help="0: ninguna, 1: primaria, 2: 5º-9º, 3: secundaria, 4: superior"
+                )
+            with c2:
+                famrel = st.slider(
+                    "Relación familiar",
+                    1, 5, 4,
+                    help="Percepción general de la relación con la familia (1 = muy mala, 5 = excelente)."
+                )
+                freetime = st.slider(
+                    "Tiempo libre después de clases",
+                    1, 5, 3,
+                    help="Nivel de tiempo libre luego de clases (1 = muy poco, 5 = mucho)."
+                )
 
-                c_rep, c_abs = st.columns(2)
-                with c_rep:
-                    failures = st.slider(
-                        "Repeticiones previas",
-                        0, 4, 0,
-                        help="Número de cursos repetidos hasta la fecha.",
-                    )
-                with c_abs:
-                    absences = st.number_input(
-                        "Inasistencias totales",
-                        min_value=0,
-                        max_value=100,
-                        value=0,
-                        help="Cantidad total de inasistencias acumuladas en el año.",
-                    )
+            # Repeticiones arriba, inasistencias y salud abajo
+            failures = st.slider(
+                "Repeticiones previas",
+                0, 4, 0,
+                help="Número de cursos que el/la estudiante ha repetido hasta la fecha."
+            )
 
+            c_abs, c_health = st.columns(2)
+            with c_abs:
+                absences = st.number_input(
+                    "Inasistencias totales",
+                    min_value=0,
+                    max_value=100,
+                    value=0,
+                    help="Cantidad total de inasistencias acumuladas en el año actual."
+                )
+            with c_health:
                 health = st.slider(
                     "Salud general",
                     1, 5, 4,
-                    help="Percepción general de salud: 1 = muy mala, 5 = muy buena.",
+                    help="Percepción de salud del estudiante (1 = muy mala, 5 = muy buena)."
                 )
 
             st.markdown("<hr/>", unsafe_allow_html=True)
 
-            # ---- Bloque 3: Hábitos y apoyos académicos ----
+            # ---- 3. Hábitos y apoyos académicos ----
             st.markdown(
                 '<div class="section-title">3. Hábitos y apoyos académicos ✏️📚</div>',
                 unsafe_allow_html=True,
             )
-
             st.markdown(
-                '<div class="section-caption">Registra las horas de estudio y los apoyos educativos con los que cuenta.</div>',
+                '<div class="section-caption">Registra horas de estudio y apoyos educativos disponibles.</div>',
                 unsafe_allow_html=True,
             )
 
@@ -495,49 +519,48 @@ with tab_ind:
                 studytime = st.slider(
                     "Horas de estudio semanal",
                     1, 4, 2,
-                    help="1:<2h, 2:2–5h, 3:5–10h, 4:>10h de estudio fuera de clases.",
+                    help="1:<2h, 2:2–5h, 3:5–10h, 4:>10h de estudio fuera de clases."
                 )
                 schoolsup_es = st.selectbox(
                     "Apoyo educativo del colegio",
                     list(YESNO_OPTS.keys()),
-                    help="Apoyos adicionales brindados por el colegio (talleres, refuerzo, etc.)",
+                    help="Refuerzos, talleres o tutorías adicionales brindadas por el colegio."
                 )
                 famsup_es = st.selectbox(
                     "Apoyo educativo de la familia",
                     list(YESNO_OPTS.keys()),
-                    help="Apoyo en tareas, acompañamiento y seguimiento desde el hogar.",
+                    help="Acompañamiento en tareas, monitoreo de notas y apoyo en el hogar."
                 )
             with ch2:
                 paid_es = st.selectbox(
                     "Clases particulares pagadas",
                     list(YESNO_OPTS.keys()),
-                    help="Refuerzos externos como academias o profesores particulares.",
+                    help="Academias, refuerzos privados u otros apoyos externos pagados."
                 )
                 activities_es = st.selectbox(
                     "Actividades extracurriculares",
                     list(YESNO_OPTS.keys()),
-                    help="Participación en deportes, arte, música u otras actividades formativas.",
+                    help="Participación en deportes, música, arte u otras actividades formativas."
                 )
                 higher_es = st.selectbox(
                     "Desea estudios superiores",
                     list(YESNO_OPTS.keys()),
-                    help="Intención declarada de continuar estudios técnicos o universitarios.",
+                    help="Intención de continuar estudios técnicos o universitarios tras terminar el colegio."
                 )
                 internet_es = st.selectbox(
                     "Acceso a Internet en casa",
                     list(YESNO_OPTS.keys()),
-                    help="Disponibilidad de conexión estable para realizar tareas y trabajos.",
+                    help="Disponibilidad de Internet estable para realizar tareas y trabajos."
                 )
 
             st.markdown(
                 '<div class="small-note">Al hacer clic en <b>"Predecir aprobación"</b> se calculará la probabilidad de que el estudiante apruebe el año escolar.</div>',
                 unsafe_allow_html=True,
             )
-
             st.markdown("<div style='height:0.7rem'></div>", unsafe_allow_html=True)
             submitted = st.form_submit_button("Predecir aprobación ✅")
 
-    # ---- Columna derecha: guía y contexto ----
+    # ---- Columna derecha: guía UX ----
     with col_side:
         st.markdown(
             """
@@ -547,26 +570,25 @@ with tab_ind:
     <div class="info-chip">ℹ️ Solo apoyo orientativo</div>
   </div>
   <p style="font-size:0.85rem;color:#4b5563;margin-bottom:0.3rem;">
-    • Valores de probabilidad cercanos a <b>1</b> indican una alta probabilidad de <b>aprobación (PASS)</b>.<br/>
+    • Valores de probabilidad cercanos a <b>1</b> indican alta probabilidad de <b>aprobación (PASS)</b>.<br/>
     • Valores cercanos a <b>0</b> sugieren riesgo de <b>desaprobación (FAIL)</b> y requieren seguimiento más profundo.<br/>
-    • Usa siempre esta información junto con entrevistas, observaciones en aula y reportes de los docentes.
+    • Combina siempre estos resultados con observaciones en aula, entrevistas y reportes de los docentes.
   </p>
   <p style="font-size:0.85rem;color:#4b5563;margin-top:0.5rem;margin-bottom:0;">
-    Te sugerimos revisar especialmente:
+    Presta atención especialmente a:
   </p>
   <ul style="font-size:0.84rem;color:#4b5563;margin-top:0.3rem;padding-left:1.1rem;">
     <li>Estudiantes con muchas <b>inasistencias</b> o varias <b>repeticiones previas</b>.</li>
-    <li>Niveles muy bajos de <b>apoyo familiar</b> y <b>horas de estudio</b>.</li>
-    <li>Diferencias importantes entre la percepción de <b>salud</b> y el rendimiento observado.</li>
+    <li>Niveles bajos de <b>apoyo familiar</b> y pocas <b>horas de estudio</b> a la semana.</li>
+    <li>Casos donde la <b>salud percibida</b> sea muy baja o existan antecedentes de dificultades emocionales.</li>
   </ul>
 </div>
 """,
             unsafe_allow_html=True,
         )
 
-    # ----------------- POST-PREDICCIÓN -----------------
+    # ---- Resultado ----
     if submitted:
-        # Mapear selecciones a códigos originales (LÓGICA IGUAL)
         sex = SEX_OPTS[sex_es]
         address = ADDRESS_OPTS[address_es]
         famsize = FAMSIZE_OPTS[famsize_es]
@@ -578,7 +600,7 @@ with tab_ind:
         higher = YESNO_OPTS[higher_es]
         internet = YESNO_OPTS[internet_es]
 
-        traveltime = DEFAULT_TRAVELTIME  # fijo, ya no se pide en UI
+        traveltime = DEFAULT_TRAVELTIME
 
         data = {
             "sex": sex,
@@ -606,7 +628,6 @@ with tab_ind:
         df = ensure_expected_columns(df)
 
         proba_pass = float(winner_pipe.predict_proba(df)[0, 1])
-
         pred_int = int(proba_pass >= BEST_THR)
         pred_label = LABELS[pred_int]
 
@@ -623,7 +644,6 @@ with tab_ind:
 
         st.markdown("<hr/>", unsafe_allow_html=True)
 
-        # Métricas en dos columnas
         colA, colB = st.columns(2)
 
         with colA:
@@ -654,7 +674,6 @@ with tab_ind:
             )
             st.markdown('</div>', unsafe_allow_html=True)
 
-        # Gráfico de probabilidad
         st.markdown("#### Distribución de probabilidad 📊")
         prob_df = pd.DataFrame(
             {"Clase": ["FAIL", "PASS"], "Probabilidad": [1 - proba_pass, proba_pass]}
@@ -698,7 +717,11 @@ with tab_batch:
         "Las columnas faltantes que el modelo espere se rellenarán con valores neutros."
     )
 
-    file = st.file_uploader("Archivo CSV", type=["csv"])
+    file = st.file_uploader(
+        "Archivo CSV",
+        type=["csv"],
+        help="El archivo debe contener una fila por estudiante con las columnas indicadas."
+    )
 
     if file is not None:
         df_in = pd.read_csv(file)
