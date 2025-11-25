@@ -5,76 +5,93 @@ import pandas as pd
 import numpy as np
 
 # ==============================
-#  Configuración general (MODO OSCURO)
+#  Configuración general (Tema Colegio Unión de Ñaña)
 # ==============================
 st.set_page_config(
-    page_title="Clasificación — Aprobación (PASS / FAIL)",
+    page_title="Panel de Aprobación – Colegio Unión de Ñaña",
     page_icon="🎓",
-    layout="centered",
+    layout="wide",
 )
 
 st.markdown(
     """
 <style>
-/* Fondo general oscuro */
-main, .stApp {
-    background: #020617;
+:root {
+    --primary: #003c71;          /* azul institucional */
+    --primary-soft: #e3edf7;
+    --accent: #facc15;           /* dorado suave */
+    --accent-soft: #fef9c3;
+    --bg-page: #f3f4f6;
+    --bg-card: #ffffff;
+    --border-subtle: #e5e7eb;
+    --text-main: #111827;
+    --text-muted: #6b7280;
 }
 
-/* Texto general claro */
+/* Fondo general claro */
+main, .stApp {
+    background: var(--bg-page);
+}
+
+/* Tipografía general */
 html, body, .stApp, .stMarkdown, p, li, span, label,
 h1, h2, h3, h4, h5, h6, .stCaption {
-    color: #e5e7eb !important;
+    color: var(--text-main);
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
 /* Tabs tipo pastilla */
 .stTabs [data-baseweb="tab-list"] {
-    gap: 0.15rem;
+    gap: 0.25rem;
 }
 .stTabs [data-baseweb="tab"] {
     border-radius: 999px;
-    padding: 0.35rem 0.9rem;
-    background-color: #0f172a;
-    color: #cbd5f5;
+    padding: 0.4rem 1.1rem;
+    background-color: #e5e7eb;
+    color: #374151;
     font-weight: 500;
-    border: 1px solid #1e293b;
+    border: 1px solid #d1d5db;
 }
 .stTabs [aria-selected="true"] {
-    background: linear-gradient(90deg, #2563eb, #1d4ed8) !important;
+    background: linear-gradient(90deg, var(--primary), #1d4ed8) !important;
     color: #f9fafb !important;
+    border-color: transparent !important;
 }
 
 /* Tarjeta principal */
 .card {
-    background-color: #020617;
+    background-color: var(--bg-card);
     border-radius: 1rem;
-    padding: 1.5rem 1.75rem;
-    box-shadow: 0 18px 40px rgba(15, 23, 42, 0.9);
-    border: 1px solid rgba(148, 163, 184, 0.6);
-    color: #e5e7eb;
+    padding: 1.4rem 1.6rem;
+    box-shadow: 0 18px 35px rgba(15, 23, 42, 0.08);
+    border: 1px solid var(--border-subtle);
 }
 
 /* Tarjetas de métricas */
 .metric-card {
     border-radius: 0.9rem;
     padding: 0.9rem 1.1rem;
-    background: radial-gradient(circle at top left, #1e293b, #020617);
-    color: #f9fafb;
-    border: 1px solid #334155;
+    background: linear-gradient(135deg, var(--primary-soft), #eef2ff);
+    color: var(--text-main);
+    border: 1px solid #bfdbfe;
+}
+.metric-card.pass {
+    background: linear-gradient(135deg, var(--accent-soft), #fffbeb);
+    border-color: #fde68a;
 }
 .metric-label {
     font-size: 0.78rem;
     text-transform: uppercase;
     letter-spacing: .08em;
-    color: #9ca3af;
+    color: var(--text-muted);
 }
 .metric-value {
-    font-size: 1.7rem;
-    font-weight: 700;
+    font-size: 1.8rem;
+    font-weight: 750;
 }
 .metric-sub {
     font-size: 0.9rem;
-    color: #cbd5f5;
+    color: var(--text-muted);
 }
 
 /* Botón principal */
@@ -82,32 +99,58 @@ h1, h2, h3, h4, h5, h6, .stCaption {
     border-radius: 999px;
     background: linear-gradient(90deg, #22c55e, #16a34a);
     border: none;
-    color: #0f172a;
+    color: #f9fafb;
     font-weight: 700;
-    padding: 0.5rem 1.7rem;
+    padding: 0.55rem 1.9rem;
+    box-shadow: 0 10px 24px rgba(34, 197, 94, 0.35);
 }
 .stButton>button:hover {
-    filter: brightness(1.1);
+    filter: brightness(1.05);
 }
 
-/* Selects oscuros */
+/* Selects claros */
 .stSelectbox > div > div {
-    background-color: #020617 !important;
-    color: #e5e7eb !important;
+    background-color: #ffffff !important;
+    color: var(--text-main) !important;
     border-radius: 0.75rem !important;
-    border: 1px solid #475569 !important;
+    border: 1px solid #d1d5db !important;
 }
 .stSelectbox svg {
-    color: #e5e7eb !important;
+    color: var(--text-muted) !important;
 }
+
+/* Menú de select */
 div[data-baseweb="select"] ul {
-    background-color: #020617 !important;
+    background-color: #ffffff !important;
 }
 div[data-baseweb="select"] li {
-    color: #e5e7eb !important;
+    color: var(--text-main) !important;
 }
 div[data-baseweb="select"] li:hover {
-    background-color: #111827 !important;
+    background-color: #eff6ff !important;
+}
+
+/* Inputs numéricos */
+.stNumberInput > div > div > input {
+    border-radius: 0.75rem !important;
+}
+
+/* Sliders con color institucional */
+.stSlider {
+    color: var(--primary);
+}
+
+/* Separadores suaves */
+hr {
+    border: none;
+    border-top: 1px dashed #e5e7eb;
+    margin: 1.2rem 0 1rem 0;
+}
+
+/* Dataframe */
+.stDataFrame {
+    border-radius: 0.75rem;
+    overflow: hidden;
 }
 </style>
 """,
@@ -120,18 +163,14 @@ div[data-baseweb="select"] li:hover {
 
 @st.cache_resource
 def load_pipeline_and_schema():
-    # ruta absoluta a artefactos/modelo_atrasos.joblib
     here = os.path.dirname(__file__)
     model_path = os.path.join(here, "artefactos", "modelo_atrasos.joblib")
     if not os.path.exists(model_path):
         raise FileNotFoundError(f"No se encontró el modelo en: {model_path}")
 
     pipe = joblib.load(model_path)
-
-    # El primer paso del pipeline es "prep" (ColumnTransformer con num/cat)
     prep = pipe.named_steps["prep"]
 
-    # Columnas numéricas y categóricas usadas en el entrenamiento
     num_features = list(prep.transformers_[0][2])
     cat_features = list(prep.transformers_[1][2])
     expected_cols = list(num_features) + list(cat_features)
@@ -141,11 +180,9 @@ def load_pipeline_and_schema():
 
 winner_pipe, EXPECTED_COLS, NUM_FEATS, CAT_FEATS = load_pipeline_and_schema()
 
-# Etiquetas coherentes con el modelo: 1 = PASS, 0 = FAIL
 LABELS = {0: "FAIL", 1: "PASS"}
 BEST_THR = 0.5
 
-# Variables SELECCIONADAS (las que decidimos usar en el modelo institucional)
 SELECTED_FEATURES = [
     "sex", "age", "address", "famsize",
     "Medu", "Fedu",
@@ -155,11 +192,10 @@ SELECTED_FEATURES = [
     "famrel", "freetime", "health",
 ]
 
-# Para CSV mostramos las mismas seleccionadas
 VISIBLE_COLS = list(SELECTED_FEATURES)
 
 # ==============================
-#  Mapas para mostrar en español
+#  Mapas en español
 # ==============================
 SEX_OPTS = {"Femenino": "F", "Masculino": "M"}
 YESNO_OPTS = {"Sí": "yes", "No": "no"}
@@ -178,49 +214,78 @@ TRAVELTIME_HELP = "1: <15min, 2: 15–30min, 3: 30–60min, 4: >60min"
 STUDYTIME_HELP = "1:<2h, 2:2–5h, 3:5–10h, 4:>10h"
 
 # ==============================
-#  Helper: asegurar columnas
+#  Helper columnas
 # ==============================
 def ensure_expected_columns(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Asegura que el DataFrame tenga TODAS las columnas usadas en el entrenamiento.
-    Las que falten se rellenan con valores neutros.
-    """
     for col in EXPECTED_COLS:
         if col not in df.columns:
             if col in NUM_FEATS:
                 df[col] = 0
             else:
-                df[col] = ""  # categóricas → unknown (OneHotEncoder las ignora)
+                df[col] = ""
     return df[EXPECTED_COLS]
 
+# ==============================
+#  Header estilo colegio
+# ==============================
+here = os.path.dirname(__file__)
+logo_path = os.path.join(here, "assets", "logo_union_nana.png")  # ajusta si usas otra ruta
 
-# ==============================
-#  Header
-# ==============================
-st.markdown(
-    '<h3 style="font-weight:700; margin-bottom:0.15rem;">🎓 Clasificación — PASS vs FAIL</h3>',
-    unsafe_allow_html=True,
-)
+col_logo, col_title = st.columns([1, 4])
+
+with col_logo:
+    if os.path.exists(logo_path):
+        st.image(logo_path, width=90)
+    else:
+        st.markdown(
+            "<div style='font-size:2.5rem;color:#003c71;'>A</div>",
+            unsafe_allow_html=True,
+        )
+
+with col_title:
+    st.markdown(
+        """
+<div style="
+    background:#003c71;
+    border-radius:1rem;
+    padding:0.9rem 1.2rem;
+    color:white;
+    display:flex;
+    flex-direction:column;
+    gap:0.1rem;
+">
+  <div style="font-size:1.4rem;font-weight:700;">
+    Panel de acompañamiento académico
+  </div>
+  <div style="font-size:0.95rem;opacity:0.9;">
+    Colegio Adventista Unión de Ñaña · Predicción de aprobación (PASS / FAIL)
+  </div>
+</div>
+""",
+        unsafe_allow_html=True,
+    )
+
 st.caption(
-    "App de inferencia ML para predecir **PASS (1)** vs **FAIL (0)** "
-    "a partir de hábitos y contexto académico del estudiante."
+    "Herramienta de apoyo para tutores, psicopedagogía y dirección académica. "
+    "No reemplaza la evaluación integral del estudiante."
 )
 
-tab_ind, tab_batch = st.tabs(["🔹 Predicción individual", "📂 Predicción por lote (CSV)"])
+tab_ind, tab_batch = st.tabs(["🧑‍🎓 Predicción individual", "📂 Predicción por lote (CSV)"])
 
 # ==============================
 #  Predicción individual
 # ==============================
 with tab_ind:
-    
+    st.markdown('<div class="card">', unsafe_allow_html=True)
+
     with st.form("form_pass_fail"):
         st.markdown(
-            '<h4 style="margin-bottom:0.75rem;">Predicción individual</h4>',
+            '<h4 style="margin-bottom:0.75rem;">🎯 Predicción individual</h4>',
             unsafe_allow_html=True,
         )
 
-        # === 1. Datos personales y del entorno ===
-        st.markdown("##### 1. Datos personales y del entorno")
+        # --- 1. Datos personales y entorno ---
+        st.markdown("#### 1. Datos personales y del entorno 🧍‍♀️🏡")
         c1, c2, c3 = st.columns(3)
         with c1:
             sex_es = st.selectbox("Sexo", list(SEX_OPTS.keys()))
@@ -234,8 +299,8 @@ with tab_ind:
 
         st.markdown("---")
 
-        # === 2. Contexto familiar y escolar ===
-        st.markdown("##### 2. Contexto familiar y escolar")
+        # --- 2. Contexto familiar y escolar ---
+        st.markdown("#### 2. Contexto familiar y escolar 🏠📚")
         c4, c5, c6 = st.columns(3)
         with c4:
             Medu = st.slider(
@@ -248,16 +313,18 @@ with tab_ind:
             )
         with c5:
             famrel = st.slider("Relación familiar", 1, 5, 4, help="1 = muy mala, 5 = excelente")
-            freetime = st.slider("Tiempo libre después de clases", 1, 5, 3,
-                                 help="1 = muy poco, 5 = mucho")
+            freetime = st.slider(
+                "Tiempo libre después de clases", 1, 5, 3,
+                help="1 = muy poco, 5 = mucho",
+            )
         with c6:
             absences = st.number_input("Inasistencias totales", min_value=0, max_value=100, value=0)
             failures = st.slider("Repeticiones previas", 0, 4, 0, help="Número de cursos repetidos")
 
         st.markdown("---")
 
-        # === 3. Apoyos y hábitos académicos ===
-        st.markdown("##### 3. Apoyos y hábitos académicos")
+        # --- 3. Apoyos y hábitos académicos ---
+        st.markdown("#### 3. Apoyos y hábitos académicos ✏️💻")
         c7, c8 = st.columns(2)
         with c7:
             schoolsup_es = st.selectbox("Apoyo educativo del colegio", list(YESNO_OPTS.keys()))
@@ -270,10 +337,9 @@ with tab_ind:
 
         health = st.slider("Salud general", 1, 5, 4, help="1 = muy mala, 5 = muy buena")
 
-        submitted = st.form_submit_button("Predecir aprobación")
+        submitted = st.form_submit_button("Predecir aprobación ✅")
 
     if submitted:
-        # Mapear selecciones a códigos originales
         sex = SEX_OPTS[sex_es]
         address = ADDRESS_OPTS[address_es]
         famsize = FAMSIZE_OPTS[famsize_es]
@@ -285,7 +351,6 @@ with tab_ind:
         higher = YESNO_OPTS[higher_es]
         internet = YESNO_OPTS[internet_es]
 
-        # Registro con SOLO las variables seleccionadas
         data = {
             "sex": sex,
             "age": age,
@@ -311,7 +376,6 @@ with tab_ind:
         df = pd.DataFrame([data])
         df = ensure_expected_columns(df)
 
-        # Probabilidad de PASS (clase 1)
         proba_pass = float(winner_pipe.predict_proba(df)[0, 1])
 
         pred_int = int(proba_pass >= BEST_THR)
@@ -331,19 +395,22 @@ with tab_ind:
         colA, colB = st.columns(2)
 
         with colA:
+            st.markdown('<div class="metric-card">', unsafe_allow_html=True)
             st.markdown('<div class="metric-label">Probabilidad PASS = 1</div>', unsafe_allow_html=True)
             st.markdown(
                 f'<div class="metric-value">{proba_pass:.3f}</div>',
                 unsafe_allow_html=True,
             )
             st.markdown(
-                f'<div class="metric-sub">Equivalente a {proba_pass*100:.1f}% &nbsp;|&nbsp; Umbral: {BEST_THR:.2f}</div>',
+                f'<div class="metric-sub">Equivalente a {proba_pass*100:.1f}% · Umbral: {BEST_THR:.2f}</div>',
                 unsafe_allow_html=True,
             )
             st.markdown('</div>', unsafe_allow_html=True)
             st.progress(min(max(proba_pass, 0.0), 1.0))
 
         with colB:
+            card_class = "metric-card pass" if pred_int == 1 else "metric-card"
+            st.markdown(f'<div class="{card_class}">', unsafe_allow_html=True)
             st.markdown('<div class="metric-label">Decisión del modelo</div>', unsafe_allow_html=True)
             st.markdown(
                 f'<div class="metric-value">{pred_label} ({pred_int})</div>',
@@ -355,8 +422,7 @@ with tab_ind:
             )
             st.markdown('</div>', unsafe_allow_html=True)
 
-        # Gráfico intuitivo FAIL vs PASS
-        st.markdown("#### Distribución de probabilidad")
+        st.markdown("#### Distribución de probabilidad 📊")
         prob_df = pd.DataFrame(
             {"Clase": ["FAIL", "PASS"], "Probabilidad": [1 - proba_pass, proba_pass]}
         )
@@ -371,7 +437,7 @@ with tab_batch:
     st.markdown('<div class="card">', unsafe_allow_html=True)
 
     st.markdown(
-        '<h4 style="margin-bottom:0.2rem;">Predicción por lote (CSV)</h4>',
+        '<h4 style="margin-bottom:0.2rem;">📂 Predicción por lote (CSV)</h4>',
         unsafe_allow_html=True,
     )
 
@@ -407,9 +473,13 @@ with tab_batch:
         st.write("Vista previa de resultados:")
         st.dataframe(df_out.head())
 
-        # Gráfica de distribución de predicciones
-        st.markdown("#### Distribución de predicciones (FAIL / PASS)")
-        counts = pd.Series(pred_label).value_counts().rename_axis("Clase").reset_index(name="Cantidad")
+        st.markdown("#### Distribución de predicciones (FAIL / PASS) 🧮")
+        counts = (
+            pd.Series(pred_label)
+            .value_counts()
+            .rename_axis("Clase")
+            .reset_index(name="Cantidad")
+        )
         st.bar_chart(counts.set_index("Clase"))
 
         csv_out = df_out.to_csv(index=False).encode("utf-8")
