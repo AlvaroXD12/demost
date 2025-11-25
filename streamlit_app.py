@@ -61,6 +61,7 @@ h1, h2, h3, h4, h5, h6, .stCaption {
     background: radial-gradient(circle at top left, #1e293b, #020617);
     color: #f9fafb;
     border: 1px solid #334155;
+    display: none;
 }
 .metric-label {
     font-size: 0.78rem;
@@ -413,7 +414,6 @@ with tab_ind:
             st.progress(min(max(proba_pass, 0.0), 1.0))
 
         with colB:
-            st.markdown('<div class="metric-card">', unsafe_allow_html=True)
             st.markdown('<div class="metric-label">Decisión del modelo</div>', unsafe_allow_html=True)
             st.markdown(
                 f'<div class="metric-value">{pred_label} ({pred_int})</div>',
