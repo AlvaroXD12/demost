@@ -478,7 +478,7 @@ st.caption("Selecciona el modo de uso: analizar un solo estudiante o cargar un a
 #  PREDICCIÓN INDIVIDUAL
 # ==============================
 with tab_ind:
-    st.markdown('<div class="card">', unsafe_allow_html=True)
+    
 
     # Encabezado dentro de la tarjeta (usa el espacio en blanco)
     st.markdown(
@@ -651,16 +651,29 @@ with tab_ind:
     # ---- Columna derecha: guía UX ----
     with col_side:
         st.markdown(
-    """
-<div style="margin-bottom:0.7rem;">
-  <div class="section-title">Predicción individual 🔍</div>
-  <div class="section-caption">
-    Completa la ficha del estudiante para estimar su probabilidad de aprobación en el año escolar.
+            """
+<div class="subcard">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.3rem;">
+    <div style="font-weight:650;">Guía de lectura rápida</div>
+    <div class="info-chip">ℹ️ Solo apoyo orientativo</div>
   </div>
+  <p style="font-size:0.85rem;color:#4b5563;margin-bottom:0.3rem;">
+    • Valores de probabilidad cercanos a <b>1</b> indican alta probabilidad de <b>aprobación (PASS)</b>.<br/>
+    • Valores cercanos a <b>0</b> sugieren riesgo de <b>desaprobación (FAIL)</b> y requieren seguimiento más profundo.<br/>
+    • Combina siempre estos resultados con observaciones en aula, entrevistas y reportes de los docentes.
+  </p>
+  <p style="font-size:0.85rem;color:#4b5563;margin-top:0.5rem;margin-bottom:0;">
+    Presta atención especialmente a:
+  </p>
+  <ul style="font-size:0.84rem;color:#4b5563;margin-top:0.3rem;padding-left:1.1rem;">
+    <li>Estudiantes con muchas <b>inasistencias</b> o varias <b>repeticiones previas</b>.</li>
+    <li>Niveles bajos de <b>apoyo familiar</b> y pocas <b>horas de estudio</b> a la semana.</li>
+    <li>Casos donde la <b>salud percibida</b> sea muy baja o existan antecedentes de dificultades emocionales.</li>
+  </ul>
 </div>
 """,
-    unsafe_allow_html=True,
-)
+            unsafe_allow_html=True,
+        )
 
     # ---- Resultado ----
     if submitted:
