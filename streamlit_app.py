@@ -373,7 +373,7 @@ div[data-testid="stTooltipContent"] {
     font-size:0.75rem;
 }
 
-/* Card invisible / separador delgado */
+/* Card invisible / separador delgado para el banner */
 .ghost-card-spacer {
     width: 100%;
     height: 0.8rem;
@@ -442,7 +442,9 @@ def ensure_expected_columns(df: pd.DataFrame) -> pd.DataFrame:
 # ==============================
 #  HEADER mejorado
 # ==============================
-st.markdown('<div class="top-gap"></div>', unsafe_allow_html=True)
+
+# Card invisible arriba del banner azul/amarillo
+st.markdown('<div class="ghost-card-spacer"></div>', unsafe_allow_html=True)
 
 st.markdown(
     """
@@ -486,11 +488,7 @@ st.caption("Selecciona el modo de uso: analizar un solo estudiante o cargar un a
 #  PREDICCIÓN INDIVIDUAL
 # ==============================
 with tab_ind:
-    # Card contenedor
     st.markdown('<div class="card">', unsafe_allow_html=True)
-
-    # separador invisible entre tabs y header
-    st.markdown('<div class="ghost-card-spacer"></div>', unsafe_allow_html=True)
 
     # Encabezado dentro de la tarjeta
     st.markdown(
