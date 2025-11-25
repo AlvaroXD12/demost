@@ -376,7 +376,7 @@ div[data-testid="stTooltipContent"] {
 /* Card invisible / separador delgado para el banner */
 .ghost-card-spacer {
     width: 100%;
-    height: 0.8rem;
+    height: 2rem;
 }
 </style>
 """,
@@ -488,7 +488,6 @@ st.caption("Selecciona el modo de uso: analizar un solo estudiante o cargar un a
 #  PREDICCIÓN INDIVIDUAL
 # ==============================
 with tab_ind:
-    st.markdown('<div class="card">', unsafe_allow_html=True)
 
     # Encabezado dentro de la tarjeta
     st.markdown(
