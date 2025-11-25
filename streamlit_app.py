@@ -20,6 +20,19 @@ st.set_page_config(
 st.markdown(
     """
 <style>
+.ghost-card {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.20rem 0.75rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.75);  /* casi invisible */
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 4px 10px rgba(148, 163, 184, 0.25);
+    font-size: 0.78rem;
+    color: var(--text-muted);
+}
+
 :root {
     --primary: #0857c7;          /* azul colegio */
     --primary-soft: #e5efff;
@@ -478,7 +491,10 @@ st.caption("Selecciona el modo de uso: analizar un solo estudiante o cargar un a
 #  PREDICCIÓN INDIVIDUAL
 # ==============================
 with tab_ind:
-    
+    st.markdown(
+    '<div class="ghost-card">Predicción individual</div>',
+    unsafe_allow_html=True,
+)
 
     # Encabezado dentro de la tarjeta (usa el espacio en blanco)
     st.markdown(
