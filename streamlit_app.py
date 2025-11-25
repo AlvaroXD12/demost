@@ -32,7 +32,7 @@ st.markdown(
     --text-muted: #6b7280;
 }
 
-/* Header oscuro de Streamlit -> claro e integrado */
+/* Header de Streamlit: mismo color de fondo y sin sombra */
 header[data-testid="stHeader"] {
     background-color: var(--bg-page) !important;
     box-shadow: none !important;
@@ -43,9 +43,14 @@ main, .stApp {
     background: var(--bg-page);
 }
 .block-container {
-    padding-top: 1.2rem;
+    padding-top: 0.6rem;
     padding-bottom: 2rem;
     max-width: 1200px !important;
+}
+
+/* Pequeño espacio blanco encima del banner (para separar del header negro) */
+.top-gap {
+    height: 0.9rem;
 }
 
 /* Tipografía */
@@ -55,49 +60,87 @@ h1, h2, h3, h4, h5, h6, .stCaption {
     font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
-/* Hero banner (solo una franja, sin columna aparte) */
+/* Hero banner modernizado */
 .hero-banner {
-    margin-top: 0.2rem;
-    margin-bottom: 1.0rem;
     background:
         radial-gradient(circle at 0% 0%, #93c5fd 0, transparent 55%),
         radial-gradient(circle at 100% 0%, #fde68a 0, transparent 55%),
         linear-gradient(90deg, #003c71, #2563eb);
     border-radius: 1.25rem;
-    padding: 1.0rem 1.5rem;
+    padding: 1.1rem 1.6rem;
     color: #f9fafb;
     display: flex;
     align-items: center;
     justify-content: space-between;
     box-shadow: 0 18px 30px rgba(15, 23, 42, 0.25);
+    margin-bottom: 0.9rem;
 }
 .hero-left {
     display: flex;
-    gap: 0.9rem;
+    gap: 1rem;
     align-items: center;
 }
 .hero-icon {
-    width: 52px;
-    height: 52px;
+    width: 56px;
+    height: 56px;
     border-radius: 999px;
     display:flex;
     align-items:center;
     justify-content:center;
     background: rgba(15,23,42,0.25);
-    font-size: 1.8rem;
+    font-size: 2.0rem;
+}
+.hero-text-main {
+    display:flex;
+    flex-direction:column;
+    gap:0.15rem;
+}
+.hero-title-row {
+    display:flex;
+    align-items:center;
+    gap:0.5rem;
 }
 .hero-title {
     font-size: 1.32rem;
     font-weight: 750;
 }
+.hero-pill {
+    font-size:0.75rem;
+    padding:0.15rem 0.6rem;
+    border-radius:999px;
+    background:rgba(15,23,42,0.2);
+    border:1px solid rgba(239,246,255,0.3);
+}
 .hero-sub {
     font-size: 0.9rem;
-    opacity: 0.9;
+    opacity: 0.94;
+}
+.hero-chips {
+    margin-top:0.2rem;
+    display:flex;
+    flex-wrap:wrap;
+    gap:0.3rem;
+    font-size:0.78rem;
+}
+.hero-chip {
+    padding:0.12rem 0.5rem;
+    border-radius:999px;
+    background:rgba(15,23,42,0.22);
+}
+.hero-right {
+    text-align:right;
+    font-size:0.82rem;
+}
+.hero-right-title {
+    font-weight:650;
+}
+.hero-right-sub {
+    opacity:0.9;
 }
 
 /* Tabs como botones grandes de ancho completo */
 .stTabs {
-    margin-top: 0.1rem;
+    margin-top: 0.2rem;
 }
 .stTabs [role="tablist"] {
     display: flex;
@@ -108,9 +151,11 @@ h1, h2, h3, h4, h5, h6, .stCaption {
     box-shadow: 0 10px 22px rgba(15, 23, 42, 0.12);
     gap: 0.25rem;
 }
-/* Ocultar el resaltado rojo interno de Streamlit */
-.stTabs [role="tablist"] > div:last-child {
-    display: none !important;
+/* Ocultar la barra roja de resaltado interna */
+.stTabs [data-baseweb="tab-highlight"] {
+    background-color: transparent !important;
+    border: none !important;
+    height: 0px !important;
 }
 .stTabs [data-baseweb="tab"] {
     flex: 1;
@@ -137,29 +182,59 @@ h1, h2, h3, h4, h5, h6, .stCaption {
 .card {
     background-color: var(--bg-card);
     border-radius: 1.15rem;
-    padding: 1.2rem 1.4rem 1.6rem 1.4rem;
+    padding: 1.0rem 1.4rem 1.6rem 1.4rem;
     box-shadow: 0 18px 35px rgba(15, 23, 42, 0.07);
     border: 1px solid var(--border-subtle);
-    margin-top: 0.9rem;
+    margin-top: 0.8rem;
 }
 .subcard {
     background-color: #ffffff;
     border-radius: 0.9rem;
     padding: 1.0rem 1.1rem 1.1rem 1.1rem;
     border: 1px solid #e5e7eb;
-    margin-top: 0rem;  /* alineado arriba con ficha */
+    margin-top: 0rem;
 }
 
-/* Secciones */
+/* Encabezado dentro de la tarjeta (usa el espacio en blanco) */
+.card-header-band {
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:0.5rem 0.2rem 0.2rem 0.2rem;
+    border-bottom:1px solid #e5e7eb;
+    margin-bottom:0.6rem;
+}
+.card-header-main {
+    display:flex;
+    flex-direction:column;
+    gap:0.1rem;
+}
+.card-header-title {
+    font-size:0.98rem;
+    font-weight:650;
+}
+.card-header-sub {
+    font-size:0.82rem;
+    color:var(--text-muted);
+}
+.card-header-badge {
+    font-size:0.75rem;
+    padding:0.18rem 0.65rem;
+    border-radius:999px;
+    background:#e5efff;
+    color:#1d4ed8;
+}
+
+/* Secciones del form */
 .section-title {
     font-size: 1.02rem;
     font-weight: 650;
-    margin-bottom: 0.4rem;
+    margin-bottom: 0.35rem;
 }
 .section-caption {
     font-size: 0.82rem;
     color: var(--text-muted);
-    margin-bottom: 0.4rem;
+    margin-bottom: 0.35rem;
 }
 
 /* Tarjetas de métricas */
@@ -303,7 +378,7 @@ div[data-testid="stTooltipContent"] {
 )
 
 # ==============================
-#  Carga del modelo (lógica intacta)
+#  Carga del modelo (lógica)
 # ==============================
 @st.cache_resource
 def load_pipeline_and_schema():
@@ -357,23 +432,34 @@ def ensure_expected_columns(df: pd.DataFrame) -> pd.DataFrame:
     return df[EXPECTED_COLS]
 
 # ==============================
-#  HEADER moderno
+#  HEADER mejorado
 # ==============================
+st.markdown('<div class="top-gap"></div>', unsafe_allow_html=True)
+
 st.markdown(
     """
 <div class="hero-banner">
   <div class="hero-left">
     <div class="hero-icon">🎓</div>
-    <div>
-      <div class="hero-title">Panel de acompañamiento académico</div>
+    <div class="hero-text-main">
+      <div class="hero-title-row">
+        <span class="hero-title">Panel de acompañamiento académico</span>
+        <span class="hero-pill">Modelo ML · PASS vs FAIL</span>
+      </div>
       <div class="hero-sub">
-        Colegio Adventista Unión de Ñaña · Predicción de aprobación (PASS / FAIL) a partir de hábitos y contexto del estudiante.
+        Colegio Adventista Unión de Ñaña · Predicción de aprobación a partir de hábitos y contexto del estudiante.
+      </div>
+      <div class="hero-chips">
+        <span class="hero-chip">🎯 Enfoque: nivel secundario</span>
+        <span class="hero-chip">🤝 Apoyo a tutores y psicopedagogía</span>
       </div>
     </div>
   </div>
-  <div style="font-size:0.8rem; text-align:right; opacity:0.9;">
-    Versión institucional<br/>
-    <span style="font-weight:600;">Uso orientativo para tutores y psicopedagogía</span>
+  <div class="hero-right">
+    <div class="hero-right-title">Versión institucional</div>
+    <div class="hero-right-sub">
+      Uso orientativo para tutores<br/>y equipo psicopedagógico
+    </div>
   </div>
 </div>
 """,
@@ -394,7 +480,22 @@ st.caption("Selecciona el modo de uso: analizar un solo estudiante o cargar un a
 with tab_ind:
     st.markdown('<div class="card">', unsafe_allow_html=True)
 
-    # fila principal: formulario izquierda + guía derecha
+    # Encabezado dentro de la tarjeta (usa el espacio en blanco)
+    st.markdown(
+        """
+<div class="card-header-band">
+  <div class="card-header-main">
+    <div class="card-header-title">Registro del estudiante</div>
+    <div class="card-header-sub">
+      Completa la siguiente ficha con la información del estudiante para estimar su probabilidad de aprobación.
+    </div>
+  </div>
+  <div class="card-header-badge">📝 Encuesta individual</div>
+</div>
+""",
+        unsafe_allow_html=True,
+    )
+
     col_form, col_side = st.columns([3, 2])
 
     with col_form:
@@ -506,7 +607,7 @@ with tab_ind:
                 studytime = st.slider(
                     "Horas de estudio semanal",
                     1, 4, 2,
-                    help="1:<2h, 2:2–5h, 3:5–10h, 4:>10h de estudio fuera de clases."
+                    help=STUDYTIME_HELP
                 )
                 schoolsup_es = st.selectbox(
                     "Apoyo educativo del colegio",
@@ -550,29 +651,16 @@ with tab_ind:
     # ---- Columna derecha: guía UX ----
     with col_side:
         st.markdown(
-            """
-<div class="subcard">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.3rem;">
-    <div style="font-weight:650;">Guía de lectura rápida</div>
-    <div class="info-chip">ℹ️ Solo apoyo orientativo</div>
+    """
+<div style="margin-bottom:0.7rem;">
+  <div class="section-title">Predicción individual 🔍</div>
+  <div class="section-caption">
+    Completa la ficha del estudiante para estimar su probabilidad de aprobación en el año escolar.
   </div>
-  <p style="font-size:0.85rem;color:#4b5563;margin-bottom:0.3rem;">
-    • Valores de probabilidad cercanos a <b>1</b> indican alta probabilidad de <b>aprobación (PASS)</b>.<br/>
-    • Valores cercanos a <b>0</b> sugieren riesgo de <b>desaprobación (FAIL)</b> y requieren seguimiento más profundo.<br/>
-    • Combina siempre estos resultados con observaciones en aula, entrevistas y reportes de los docentes.
-  </p>
-  <p style="font-size:0.85rem;color:#4b5563;margin-top:0.5rem;margin-bottom:0;">
-    Presta atención especialmente a:
-  </p>
-  <ul style="font-size:0.84rem;color:#4b5563;margin-top:0.3rem;padding-left:1.1rem;">
-    <li>Estudiantes con muchas <b>inasistencias</b> o varias <b>repeticiones previas</b>.</li>
-    <li>Niveles bajos de <b>apoyo familiar</b> y pocas <b>horas de estudio</b> a la semana.</li>
-    <li>Casos donde la <b>salud percibida</b> sea muy baja o existan antecedentes de dificultades emocionales.</li>
-  </ul>
 </div>
 """,
-            unsafe_allow_html=True,
-        )
+    unsafe_allow_html=True,
+)
 
     # ---- Resultado ----
     if submitted:
