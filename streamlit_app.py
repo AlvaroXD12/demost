@@ -376,7 +376,7 @@ div[data-testid="stTooltipContent"] {
 /* Card invisible / separador delgado para el banner */
 .ghost-card-spacer {
     width: 100%;
-    height: 2rem;
+    height: 4rem;
 }
 </style>
 """,
