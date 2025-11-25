@@ -195,7 +195,7 @@ h1, h2, h3, h4, h5, h6, .stCaption {
     margin-top: 0rem;
 }
 
-/* Encabezado dentro de la tarjeta (usa el espacio en blanco) */
+/* Encabezado dentro de la tarjeta */
 .card-header-band {
     display:flex;
     align-items:center;
@@ -373,9 +373,10 @@ div[data-testid="stTooltipContent"] {
     font-size:0.75rem;
 }
 
+/* Card invisible / separador delgado */
 .ghost-card-spacer {
     width: 100%;
-    height: 0.8rem;      /* alto del espacio */
+    height: 0.8rem;
 }
 </style>
 """,
@@ -427,6 +428,7 @@ STUDYTIME_HELP = "1:<2h, 2:2–5h, 3:5–10h, 4:>10h"
 
 DEFAULT_TRAVELTIME = 1  # fijo
 
+
 def ensure_expected_columns(df: pd.DataFrame) -> pd.DataFrame:
     for col in EXPECTED_COLS:
         if col not in df.columns:
@@ -435,6 +437,7 @@ def ensure_expected_columns(df: pd.DataFrame) -> pd.DataFrame:
             else:
                 df[col] = ""
     return df[EXPECTED_COLS]
+
 
 # ==============================
 #  HEADER mejorado
@@ -483,11 +486,13 @@ st.caption("Selecciona el modo de uso: analizar un solo estudiante o cargar un a
 #  PREDICCIÓN INDIVIDUAL
 # ==============================
 with tab_ind:
-    
-    # pequeño card invisible para separar tabs y header
+    # Card contenedor
+    st.markdown('<div class="card">', unsafe_allow_html=True)
+
+    # separador invisible entre tabs y header
     st.markdown('<div class="ghost-card-spacer"></div>', unsafe_allow_html=True)
 
-    # Encabezado dentro de la tarjeta (usa el espacio en blanco)
+    # Encabezado dentro de la tarjeta
     st.markdown(
         """
 <div class="card-header-band">
