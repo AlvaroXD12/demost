@@ -378,6 +378,80 @@ div[data-testid="stTooltipContent"] {
     width: 100%;
     height: 4rem;
 }
+
+/* Recomendaciones (fase beta) */
+.reco-card {
+    margin-top: 1.1rem;
+    border-radius: 1.1rem;
+    background: linear-gradient(135deg, #eef2ff, #eff6ff);
+    padding: 1.1rem 1.3rem 1.15rem 1.3rem;
+    border: 1px solid #c7d2fe;
+    box-shadow: 0 18px 40px rgba(79, 70, 229, 0.18);
+}
+.reco-header {
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:0.8rem;
+    margin-bottom:0.7rem;
+}
+.reco-title {
+    font-size:0.98rem;
+    font-weight:700;
+}
+.reco-subtitle {
+    font-size:0.82rem;
+    color: var(--text-muted);
+}
+.reco-pill-beta {
+    font-size:0.75rem;
+    padding:0.2rem 0.7rem;
+    border-radius:999px;
+    background:#fef3c7;
+    color:#92400e;
+    border:1px solid #facc15;
+    display:inline-flex;
+    align-items:center;
+    gap:0.25rem;
+}
+.reco-pill-beta span:first-child {
+    font-weight:600;
+}
+.reco-section-label {
+    font-size:0.8rem;
+    font-weight:600;
+    text-transform:uppercase;
+    letter-spacing:.08em;
+    color:#4b5563;
+    margin-bottom:0.15rem;
+}
+.reco-section-text {
+    font-size:0.86rem;
+    color:#374151;
+    margin-bottom:0.45rem;
+}
+.reco-tags {
+    display:flex;
+    flex-wrap:wrap;
+    gap:0.25rem;
+    margin-top:0.1rem;
+}
+.reco-tag {
+    font-size:0.72rem;
+    padding:0.1rem 0.45rem;
+    border-radius:999px;
+    background:#e0f2fe;
+    color:#0369a1;
+}
+.reco-divider {
+    border-top:1px dashed rgba(148,163,184,0.6);
+    margin:0.4rem 0 0.5rem 0;
+}
+.reco-footer-note {
+    font-size:0.78rem;
+    color:#6b7280;
+    margin-top:0.5rem;
+}
 </style>
 """,
     unsafe_allow_html=True,
@@ -437,6 +511,220 @@ def ensure_expected_columns(df: pd.DataFrame) -> pd.DataFrame:
             else:
                 df[col] = ""
     return df[EXPECTED_COLS]
+
+
+def build_recommendations_html(
+    proba_pass: float,
+    pred_label: str,
+    schoolsup: str,
+    famsup: str,
+    studytime: int,
+    absences: int,
+    failures: int,
+    health: int,
+    freetime: int,
+    higher: str,
+) -> str:
+    # Nivel de riesgo según probabilidad
+    tags_risk = []
+    if proba_pass < 0.35:
+        risk_label = "Riesgo alto de desaprobación"
+        risk_text = (
+            "El modelo estima una probabilidad baja de aprobación. "
+            "Es importante activar un plan de acompañamiento cercano y sistemático."
+        )
+        tags_risk.append("⚠️ Riesgo alto")
+    elif proba_pass < 0.5:
+        risk_label = "Riesgo moderado de desaprobación"
+        risk_text = (
+            "El estudiante se encuentra en una zona de riesgo moderado. "
+            "Conviene intervenir pronto para evitar que las brechas se amplíen."
+        )
+        tags_risk.append("⚠️ Riesgo moderado")
+    elif proba_pass < 0.7:
+        risk_label = "Zona intermedia (seguimiento)"
+        risk_text = (
+            "El pronóstico es intermedio. Se recomienda hacer seguimiento cercano, "
+            "reforzar hábitos de estudio y monitorear avances."
+        )
+        tags_risk.append("🔎 Seguimiento")
+    else:
+        risk_label = "Buen pronóstico de aprobación"
+        risk_text = (
+            "El modelo estima una buena probabilidad de aprobación. "
+            "Aun así, es clave mantener hábitos de estudio y apoyo consistentes."
+        )
+        tags_risk.append("✅ Buen pronóstico")
+
+    # Apoyos escolar y familiar
+    support_parts = []
+    support_tags = []
+
+    if schoolsup == "no" and famsup == "no":
+        support_parts.append(
+            "No se reporta apoyo educativo sistemático ni desde el colegio ni desde la familia. "
+            "Se sugiere coordinar un plan conjunto de tutorías, refuerzos y acompañamiento en casa."
+        )
+        support_tags.extend(["Apoyo escolar", "Apoyo familiar"])
+    elif schoolsup == "no":
+        support_parts.append(
+            "Se observa apoyo familiar, pero no apoyo educativo extra desde el colegio. "
+            "Podría valorarse la participación en talleres, reforzamientos o tutorías institucionales."
+        )
+        support_tags.append("Apoyo escolar")
+    elif famsup == "no":
+        support_parts.append(
+            "Existe apoyo desde el colegio, pero el acompañamiento familiar es limitado. "
+            "Conviene fortalecer la comunicación con la familia y acordar rutinas de estudio en casa."
+        )
+        support_tags.append("Apoyo familiar")
+    else:
+        support_parts.append(
+            "Se cuenta con apoyos escolar y/o familiar. Es importante mantenerlos y revisar su frecuencia y calidad, "
+            "asegurando espacios de comunicación periódica sobre el progreso académico."
+        )
+        support_tags.append("Mantener apoyos")
+
+    # Hábitos de estudio y asistencia
+    habits_parts = []
+    habits_tags = []
+
+    if studytime <= 2:
+        habits_parts.append(
+            "Incrementar gradualmente las horas de estudio semanal, organizando un horario fijo de repaso y tareas "
+            "(por ejemplo, bloques de 30–40 minutos al día)."
+        )
+        habits_tags.append("Rutina de estudio")
+    elif studytime == 3 and proba_pass < 0.7:
+        habits_parts.append(
+            "Revisar la calidad del tiempo de estudio (ambiente, concentración, planificación) y promover técnicas de estudio activas."
+        )
+        habits_tags.append("Calidad de estudio")
+
+    if absences >= 20:
+        habits_parts.append(
+            "El número de inasistencias es alto. Es prioritario trabajar en un plan de asistencia regular, "
+            "identificando causas de las faltas y acordando compromisos con familia y colegio."
+        )
+        habits_tags.append("Asistencia crítica")
+    elif absences >= 10:
+        habits_parts.append(
+            "Las inasistencias podrían estar afectando el rendimiento. Se recomienda monitorear asistencia y avisos tempranos "
+            "ante nuevas ausencias."
+        )
+        habits_tags.append("Asistencia a clases")
+
+    if failures >= 2:
+        habits_parts.append(
+            "Considerar un plan de recuperación focalizado en las áreas desaprobadas (refuerzos, tutorías, evaluación continua)."
+        )
+        habits_tags.append("Plan de recuperación")
+    elif failures == 1 and proba_pass < 0.7:
+        habits_parts.append(
+            "Acompañar especialmente las asignaturas en las que ya hubo dificultades, con seguimiento de tareas y evaluaciones parciales."
+        )
+        habits_tags.append("Refuerzo específico")
+
+    if not habits_parts:
+        habits_parts.append(
+            "Mantener una rutina de estudio estable y una asistencia regular a clases, revisando periódicamente tareas y evaluaciones."
+        )
+        habits_tags.append("Hábitos saludables")
+
+    # Bienestar y proyecto de vida
+    wellbeing_parts = []
+    wellbeing_tags = []
+
+    if health <= 2:
+        wellbeing_parts.append(
+            "Explorar posibles dificultades de salud física o emocional. De ser necesario, derivar a psicopedagogía o consejería "
+            "para brindar apoyo oportuno."
+        )
+        wellbeing_tags.append("Bienestar integral")
+
+    if freetime >= 4 and studytime <= 2:
+        wellbeing_parts.append(
+            "Equilibrar el tiempo libre con responsabilidades académicas, manteniendo espacios de descanso pero evitando la postergación constante de tareas."
+        )
+        wellbeing_tags.append("Equilibrio tiempo libre")
+
+    if not wellbeing_parts:
+        wellbeing_parts.append(
+            "Continuar cuidando el bienestar emocional y físico del estudiante, reforzando espacios de escucha y confianza con familia y tutores."
+        )
+        wellbeing_tags.append("Seguimiento socioemocional")
+
+    if higher == "yes":
+        aspiration_text = (
+            "El interés por estudios superiores puede usarse como motor de motivación. "
+            "Vincular metas de corto plazo (tareas, evaluaciones) con ese proyecto de futuro."
+        )
+        aspiration_tag = "Proyecto de vida"
+    else:
+        aspiration_text = (
+            "Explorar intereses, talentos y posibles proyectos de vida puede ayudar a darle sentido al esfuerzo académico actual."
+        )
+        aspiration_tag = "Orientación vocacional"
+
+    wellbeing_text = " ".join(wellbeing_parts) + " " + aspiration_text
+
+    # Construcción de chips/tags
+    def join_tags(tags):
+        if not tags:
+            return ""
+        return "".join(f'<span class="reco-tag">{t}</span>' for t in tags)
+
+    risk_tags_html = join_tags(tags_risk)
+    support_tags_html = join_tags(support_tags)
+    habits_tags_html = join_tags(habits_tags)
+    wellbeing_tags_html = join_tags(wellbeing_tags + [aspiration_tag])
+
+    support_text = " ".join(support_parts)
+    habits_text = " ".join(habits_parts)
+
+    html = f"""
+<div class="reco-card">
+  <div class="reco-header">
+    <div>
+      <div class="reco-title">Recomendaciones personalizadas</div>
+      <div class="reco-subtitle">Sugerencias orientativas a partir de los hábitos y apoyos registrados.</div>
+    </div>
+    <div class="reco-pill-beta">
+      <span>Fase beta</span>
+      <span>🧪</span>
+    </div>
+  </div>
+  <div class="reco-body">
+    <div>
+      <div class="reco-section-label">{risk_label}</div>
+      <div class="reco-section-text">{risk_text}</div>
+      <div class="reco-tags">{risk_tags_html}</div>
+    </div>
+    <div class="reco-divider"></div>
+    <div>
+      <div class="reco-section-label">Apoyos escolar y familiar</div>
+      <div class="reco-section-text">{support_text}</div>
+      <div class="reco-tags">{support_tags_html}</div>
+    </div>
+    <div class="reco-divider"></div>
+    <div>
+      <div class="reco-section-label">Hábitos de estudio y asistencia</div>
+      <div class="reco-section-text">{habits_text}</div>
+      <div class="reco-tags">{habits_tags_html}</div>
+    </div>
+    <div class="reco-divider"></div>
+    <div>
+      <div class="reco-section-label">Bienestar y proyecto de vida</div>
+      <div class="reco-section-text">{wellbeing_text}</div>
+      <div class="reco-tags">{wellbeing_tags_html}</div>
+    </div>
+  </div>
+  <div class="reco-footer-note">
+    Estas recomendaciones son referenciales y deben complementarse con entrevistas, observación en aula y los criterios del equipo docente y psicopedagógico.
+  </div>
+</div>
+"""
+    return html
 
 
 # ==============================
@@ -797,6 +1085,21 @@ with tab_ind:
         )
 
         st.altair_chart(chart, use_container_width=True)
+
+        # Panel de recomendaciones (fase beta)
+        reco_html = build_recommendations_html(
+            proba_pass=proba_pass,
+            pred_label=pred_label,
+            schoolsup=schoolsup,
+            famsup=famsup,
+            studytime=studytime,
+            absences=absences,
+            failures=failures,
+            health=health,
+            freetime=freetime,
+            higher=higher,
+        )
+        st.markdown(reco_html, unsafe_allow_html=True)
 
     st.markdown("</div>", unsafe_allow_html=True)
 
